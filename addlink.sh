@@ -4,15 +4,14 @@
 ##########
 #Adding to a Linked List Gluster
 #
-add=$(( $op8 + 1 ))
-
 clear
 	echo -e "This will work as long as you currently have a Linked List Topology and have already created bricks on the server being added.\n"
 	read -p "Do you want to continue? (Y/n) " yn2
 	case $yn2 in
-	[Yy] *)		
+	[Yy]*)		
 		read -p "What is the name of your Gluster Volume:  " op7
 		read -p "How many servers are currently in your Gluster? " op8
+		add=$(( $op8 + 1 ))
 		read -p "Press Enter to confirm that you want to add gluster$add to $op7 " con2
 		case $con2 in
 			*)
@@ -35,4 +34,4 @@ clear
 	[nN]*)
 			;;
 	esac
-	;;	
+
