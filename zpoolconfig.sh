@@ -1,4 +1,16 @@
 #!/bin/bash
+#CAuCoin
+#45DRIVES
+############
+#--------------------
+#         Zpool Configuration tool
+#         1) List All Configuartion by Physical Location
+#         2) Use Recommended Configuration
+#         3) Use Custom Configuration
+#         4) View Zpool Status
+#         5) Exit Zpool Configuartion
+#--------------------
+############
 
 while :
 clear
@@ -7,8 +19,9 @@ echo -e "\n Zpool Configuration\n----------------------------------------\n"
 echo -e " 1) List All Drives by Physical Location"
 echo -e " 2) Use Recommended Configuration" 
 echo -e " 3) Use Custom Configuration" 
-echo -e " 4) View Status\n" 
-read -p " Enter an Option From 1-4: " op0
+echo -e " 4) View Status"
+echo -e " 5) Exit Zpool Configuration\n"
+read -p " Enter an Option From 1-5: " op0
 
 case $op0 in
 1)
@@ -117,5 +130,11 @@ case $op0 in
 	esac
 	;;
 
+5)
+	clear
+	exit 1
+	;;
+*)
+	;;
 esac
 done
