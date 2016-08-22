@@ -1,0 +1,11 @@
+#!/bin/bash
+dir=$1
+if [ -z "$dir" ];then
+	dir=$(pwd)
+fi
+
+cd $dir
+
+find . -type f -exec dos2unix {} \;
+
+cd $pwd

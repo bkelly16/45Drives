@@ -1,0 +1,56 @@
+#!/bin/bash
+
+#!/bin/bash
+#45DRIVES
+#BK
+############
+############
+
+declare -A NODES
+declare -A STATUS
+
+dir="/setup"
+
+#Fill NODES array with input hostnames
+COUNT=0
+for node in $@; do
+	i=$(expr $COUNT + 1)
+	NODES[$i]=$node
+	let COUNT=COUNT+1
+done
+
+i=1
+# Send a packet to each hostname, output is true for repsonse and false for no repsonse
+for n in $@;do
+	if ping -c 1 -W 1 $n >/dev/null; then
+		STATUS[$i]="UP"
+	else
+		STATUS[$i]="DOWN"
+	fi
+	let i=i+1
+done
+
+
+
+read -p "Push files to Nodes? (y/n) " yn0
+i=1
+for node in $@;do
+	if [ "$yn0" == y ] && [ "${STATUS[$i]}" == "UP" ];then 
+		echo -e "\nSyncing files with $node\n---"
+		rsync -avz --delete /media/proto/45Drives/RnD/Scripts/GlusterScripts/setup/ root@$node:$dir/ 
+	fi
+	let i=i+1
+done
+i=1
+echo
+
+	read -p "Push vdev_id.conf files to Nodes? You will need to reload drive map on each node you copy to (y/n) " yn1
+	for node in $@;do
+		if [ "$yn1" == y ] && [ "${STATUS[$i]}" == "UP" ];then 
+			echo -e "\nSyncing files with $node\n---"
+			rsync -avz /media/proto/45Drives/RnD/Scripts/GlusterScripts/alias/ root@$node:/etc/zfs/ 
+			#scp -r /media/proto/45Drives/RnD/Scripts/GlusterScripts/alias/* root@$node:/etc/zfs/
+		fi
+		let i=i+1
+	done
+

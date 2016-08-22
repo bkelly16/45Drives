@@ -1,0 +1,148 @@
+#!/bin/bash
+#BKELLY
+#45DRIVES
+############
+# Main menu of Gluster Configuration tool
+# Takes node hostnames as input
+# adminsters nodes via ssh calls of scripts local to each server
+# PLans to add input of a config file so user simply makes a "etc/hosts" like file
+
+declare -A NODES
+declare -A STATUS
+declare -A POOL
+
+dir="/setup"
+
+#Fill NODES array with input hostnames
+COUNT=0
+for node in $@; do
+	i=$(expr $COUNT + 1)
+	NODES[$i]=$node
+	let COUNT=COUNT+1
+done
+
+i=1
+# Send a packet to each hostname, output is true for repsonse and false for no repsonse
+# Time to wait for response can be changed if on a very slow network, using the -W option in ping command below
+# default is 1 second
+for n in $@;do
+	if ping -c 1 -W 1 $n >/dev/null; then
+		STATUS[$i]="UP"
+	else
+		STATUS[$i]="DOWN"
+	fi
+	let i=i+1
+done
+
+
+# Display options and Node Status
+while :
+clear
+do
+echo -e "\n Gluster Cluster 9000\n---------------------------------"
+echo -e "1) Zpool Configuration"
+echo -e "2) Gluster Volume Configuration"
+echo -e "3) CTDB/SMB Configuration"
+echo -e "4) Network Configuration(careful)"
+echo -e "5) Push files to Nodes"
+echo -e "Q) Exit"
+echo -e "---------------------------------"
+printf "%-10s | %-5s \n" Node Status
+printf "%-10s | %-10s" ---- ------
+echo
+i=1
+for node in $@;do
+
+	printf "%-10s | %-5s \n" "${NODES[$i]}" "${STATUS[$i]}"
+	let i=i+1
+done
+echo
+read -p "Enter Option from 1-5: " op0
+
+case $op0 in
+1)
+	clear
+	i=1
+	for node in $@;do
+		read -p "Configure zpool on ${NODES[$i]} ? (y/n) " yn0
+		#exclude nodes which are down, the ssh command will hang indefinitly if link is down.
+		if [ "$yn0" == y ] && [ "${STATUS[$i]}" == "UP" ];then 
+			ssh -t root@$node "cd $dir ; sh $dir/zpoolconfig.sh $node"
+		elif [ $i -eq $COUNT ];then
+			echo -e "\nNo more Nodes...\n"
+		else
+			echo -e "\nMoving on...\n"
+		fi
+		let i=i+1
+	done
+	echo
+	read -p "Press Enter to continue" con1
+	case $con1 in
+	*)
+		;;
+	esac
+	;;
+2)
+	clear
+	i=1
+	for node in $@;do
+		read -p "Configure Gluster Volume on ${NODES[$i]} ? (y/n) " yn0
+		#exclude nodes which are down, the ssh command will hang indefinitly if link is down.
+		if [ "$yn0" == y ] && [ "${STATUS[$i]}" == "UP" ];then 
+			ssh -t root@$node "cd $dir ; sh $dir/glusterconfig.sh $node"
+		elif [ $i -eq $COUNT ];then
+			echo -e "\nNo more Nodes...\n"
+		else
+			echo -e "\nMoving on...\n"
+		fi
+		let i=i+1
+	done
+	echo
+	read -p "Press Enter to continue" con1
+	case $con1 in
+	*)
+		;;
+	esac
+	;;
+
+3)
+	echo -e "\nno....\n"
+	read -p "Press Enter to continue" con1
+	case $con1 in
+	*)
+		;;
+	esac
+	;;
+4)
+	clear
+	i=1
+	for node in $@;do
+		read -p "Configure Networking on ${NODES[$i]} ? (y/n) " yn0
+		#exclude nodes which are down, the ssh command will hang indefinitly if link is down.
+		if [ "$yn0" == y ] && [ "${STATUS[$i]}" == "UP" ];then 
+			ssh -t root@$node "cd $dir ; sh $dir/netconfig.sh $node"
+		elif [ $i -eq $COUNT ];then
+			echo -e "\nNo more Nodes...\n"
+		else
+			echo -e "\nMoving on...\n"
+		fi
+		let i=i+1
+	done
+	echo
+	read -p "Press Enter to continue" con1
+	case $con1 in
+	*)
+		;;
+	esac
+	;;
+	
+5)
+	./push2 $@
+	;;
+[Qq]*)
+	exit 1
+	;;
+*)
+	;;
+esac
+done

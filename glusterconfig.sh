@@ -1,4 +1,4 @@
-#!/bin/bash
+# !/bin/bash
 #CAuCoin
 #45DRIVES
 ############
@@ -12,34 +12,31 @@
 #         6) Exit Gluster Configuartion
 #--------------------
 ############
-
-dir=/setup
+NODE=$1
 
 while :
 clear
 do
 echo -e "\n Gluster Configuration\n-------------------------------\n"
+echo -e "Working Node: "$NODE"\n ------------------"
 echo -e " 1) Create Bricks"
 echo -e " 2) Set up Linked List Topology" 
 echo -e " 3) Expand Linked List Topology" 
 echo -e " 4) Set up Paired Server Topology" 
 echo -e " 5) Expand Paired Server Topology"
 echo -e " 6) Exit Gluster Configuration\n"
-read -p " Enter an Option From 1-5: " op0
-
+read -p " Enter an Option From 1-6: " op0
 case $op0 in
-
 1)
 	clear
 	zfs create -o sync=disabled zpool/vol1
 	zfs create -o sync=disabled zpool/vol2
 	mkdir /zpool/vol1/brick /zpool/vol2/brick
 	;;
-
 2)
 	clear
 	echo -e "\n"
-	sh $dir/linkedlist.sh
+	sh linkedlist.sh
 	echo -e "\n"
 	read -p "Press Enter to continue" con1
 	case $con1 in
@@ -47,11 +44,10 @@ case $op0 in
 		;;
 	esac
 	;;
-
 3) 
 	clear
 	echo -e "\n"
-	sh $dir/addlink.sh
+	sh addlink.sh
 	echo -e "\n"
 	read -p "Press Enter to continue" con1
 	case $con1 in
@@ -59,12 +55,10 @@ case $op0 in
 		;;
 	esac
 	;;
-	
-	
 4)	
 	clear
 	echo -e "\n"
-	sh $dir/pairedserver.sh
+	sh pairedserver.sh
 	echo -e "\n"
 	read -p "Press Enter to continue" con1
 	case $con1 in
@@ -72,11 +66,10 @@ case $op0 in
 		;;
 	esac
 	;;
-	
 5)
 	clear
 	echo -e "\n"
-	sh $dir/addpair.sh
+	sh addpair.sh
 	echo -e "\n"
 	read -p "Press Enter to continue" con1
 	case $con1 in
@@ -94,5 +87,3 @@ case $op0 in
 	
 esac
 done
-	
-	

@@ -11,8 +11,8 @@
 #	4) Exit Network Configuration
 #---------------
 ############
-
-dir=/root/setup
+NODE=$1
+#dir=/setup
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -21,7 +21,10 @@ NC='\033[0m'
 while :
 clear
 do
-echo -e "\nNetwork Configuration\n---------------------------------------\n"
+echo -e "\nNetwork Configuration\n-------------------------"
+if [ -n "$NODE" ];then
+	echo -e "Working Node: "$NODE"\n-------------------------"
+fi 
 echo -e "1) List Current Interfaces"
 echo -e "2) Edit Network Interfaces"
 echo -e "3) Restart Networking Service"
@@ -32,7 +35,7 @@ case $op0 in
 1)
 	clear
 	echo -e "\n"
-	sh $dir/lsnic.sh
+	sh lsnic.sh
 	echo -e "\n"
 	read -p "Press Enter to continue" con1
 	case $con1 in
