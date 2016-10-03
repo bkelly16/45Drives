@@ -22,3 +22,14 @@ Requires CentOS7.2
 * gtools
 * Drive Mapping Alias files
 * R750 Driver
+
+- Drive Alias Configuration:
+----------------------------
+* vdev_id.conf
+
+- Using gtools:
+----------------------------
+* ./config host[@]
+
+
+
