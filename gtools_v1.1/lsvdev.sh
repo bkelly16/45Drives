@@ -9,7 +9,8 @@
 ############
 
 declare -A VDEVMATRIX
-#declare -A COLORS
+declare -A Legend
+
 BLACK='\033[0;30m'
 BLUE='\033[0;34m'
 GREEN='\033[0;32m'
@@ -62,44 +63,24 @@ getbays(){
 		let j=j+1
 	done
 }
-echo break3
 getvdevmember() {
 	for ((c1=1;c1<=VDEVCOUNT;c1++)); do
-    		for ((c2=1;c2<=VDEVSIZE;c2++)); do
-        		if [ "${BAY[$1]}" == "${VDEVMATRIX[$c2,$c1]}" ];then
-				#printf "%s|%s\n" ${BAY[$1]} ${VDEVMATRIX[$c2,$c1]}
-				printf -v member "${COLORS[$c1]}%-5s$NC" ${BAY[$1]}
-				BAYSTATUS[$1]=$member
-				return
-			else
-				#printf "%s |%s \n" ${BAY[$1]} ${VDEVMATRIX[$c2,$c1]}
-				printf -v no "$DGREY%-5s$NC" ${BAY[$1]}
-				BAYSTATUS[$1]=$no
-			fi
- 	   	done
+    	for ((c2=1;c2<=VDEVSIZE;c2++)); do
+        	if [ "${BAY[$1]}" == "${VDEVMATRIX[$c2,$c1]}" ];then
+			#printf "%s|%s\n" ${BAY[$1]} ${VDEVMATRIX[$c2,$c1]}
+			printf -v member "${COLORS[$c1]}%-5s$NC" ${BAY[$1]}
+			BAYSTATUS[$1]=$member
+			return
+		else
+			#printf "%s |%s \n" ${BAY[$1]} ${VDEVMATRIX[$c2,$c1]}
+			printf -v no "$DGREY%-5s$NC" ${BAY[$1]}
+			BAYSTATUS[$1]=$no
+		fi
+ 	done
 	done		
 
 }
 
-printARRAY(){
-	## PRINT ARRAY
-	f1="%$((${#VDEV_SIZE}+1))s"
-	f2=" %9s"
-
-	printf "$f1" ''
-	for ((i=1;i<=VDEVSIZE;i++)) do
-    	printf "$f2" $i
-	done
-	echo
-
-	for ((j=1;j<=VDEVCOUNT;j++)) do
-    	printf "$f1" $j
-    	for ((i=1;i<=VDEVSIZE;i++)) do
-        	printf "$f2" ${VDEVMATRIX[$i,$j]}
- 	   done
- 	   echo	
-	done
-}
 
 ##MAIN
 # Get a list of vdev and each drive in it
@@ -140,7 +121,7 @@ done
 getbays
 
 if [ "$card" -eq "0" ];then
-	echo	
+
 	printf "| %s %s %s |\n" $r750tag DriverVersion: $r750driver 
 else
 	echo
@@ -149,6 +130,7 @@ fi
 
 
 WIDTH=15
+WIDTH_=$(expr $WIDTH - 1)
 
 i=0
 j=$(expr $i + $WIDTH)
@@ -178,11 +160,12 @@ case $BAYS in
 	#45Unit
 	line 24 _
 	while [ $i -lt $WIDTH ];do
-		#echo "$i | $j | $k "
-		getvdevmember $i
+		k_=$(expr $WIDTH + $WIDTH + $WIDTH_ - $i )
+		i_=$(expr $WIDTH_ - $i )
+		getvdevmember $i_
 		getvdevmember $j
-		getvdevmember $k
-		printf "| %s | %s | %s |\n" "${BAYSTATUS[$i]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k]}"	
+		getvdevmember $k_
+		printf "| %s | %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k_]}"	
 		#printf "| %-7s | %-7s | %-7s |\n" ${BAY[$i]} ${BAY[$j]} ${BAY[$k]}
 		let i=i+1
 		let j=j+1
@@ -194,22 +177,24 @@ case $BAYS in
 	;;
 60)
 	#60unit
-	line 24 _
+	line 32 _
 	while [ $i -lt $WIDTH ];do
-		getvdevmember $i
+		k_=$(expr $WIDTH + $WIDTH + $WIDTH_ - $i )
+		i_=$(expr $WIDTH_ - $i )
+		getvdevmember $i_
 		getvdevmember $j
-		getvdevmember $k
+		getvdevmember $k_
 		getvdevmember $l
-		printf "| %s | %s | %s | %s |\n" "${BAYSTATUS[$i]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k]}" "$BAYSTATUS[$l]}"	
+		printf "| %s | %s | %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k_]}" "${BAYSTATUS[$l]}"	
 		#printf "| %-7s | %-7s | %-7s |\n" ${BAY[$i]} ${BAY[$j]} ${BAY[$k]}
 		let i=i+1
 		let j=j+1
 		let k=k+1
 		let l=l+1
 	done
-	line 24 -
+	line 32 -
 	printf "| %-5s | %-5s | %-5s | %-5s |\n" ROW1 ROW2 ROW3 ROW4
-	line 24 =
+	line 32 =
 	echo	
 	;;
 *)

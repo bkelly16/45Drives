@@ -12,7 +12,7 @@ LGREEN='\033[1;32m'
 LGREY='\033[1;37m'
 DGREY='\033[1;30m'
 YELLOW='\033[0;33m'
-BLUE='033[0;36m'
+BLUE='\033[0;36m'
 NC='\033[0m'
 
 line() { # takes a number as first input Length, and any character as second input, defaults to "-" if no option
@@ -39,7 +39,7 @@ setBAYstatus() {
 		#absent=$(echo -e "${DGREY}${BAY[$1]}${NC}")
 		BAYSTATUS[$1]=$absent
 	elif [ "$partcount" -eq "1" ];then
-		printf -v blank "$BLUE%-5s$NC" ${BAY[$1]}  	
+		printf -v blank "$YELLOW%-5s$NC" ${BAY[$1]}  	
 		#blank=$(echo -e "${BLUE}${BAY[$1]}${NC}")
 		BAYSTATUS[$1]=$blank
 	elif [ "$partcount" -eq "3" ];then
@@ -53,17 +53,26 @@ setBAYstatus() {
 	fi
 }
 
-i=2 
-BAYS_=$(cat /etc/zfs/vdev_id.conf | wc -l)
-BAYS=$(expr $BAYS_ - $i ) #Exclude comments at top of config file
+BAYS=$((cat /etc/zfs/vdev_id.conf| awk "NR>2" | wc -l) 2>/dev/null)
+#BAYS=$(expr $BAYS_  ) #Exclude comments at top of config file
 
 #Check which controller present are in the system
-cat /etc/zfs/vdev_id.conf | grep scsi >/dev/null
-card=$?
+
+check=0
+if [ -e /proc/scsi/r750/10 ] || [ -e /proc/scsi/r750/11 ];then
+	check=1
+fi
+#scsi=$(cat /etc/zfs/vdev_id.conf 2>/dev/null | grep scsi | awk 'NR=1{print$1}')
+#card=$?
 #Controller Info
 lsitag="Disk Controller: LSI9201-24e"
 r750tag="Disk Controller: HighPointR750"
 lsidriver=$(modinfo mpt2sas | grep version | awk 'NR==1{print $2}')
+if [ -e /proc/scsi/r750/10 ];then
+	r750driver=$(cat /proc/scsi/r750/10 2>/dev/null | awk 'NR==1{print $5}')
+elif [ -e /proc/scsi/r750/11 ];then
+	r750driver=$(cat /proc/scsi/r750/11 2>/dev/null | awk 'NR==1{print $5}')
+fi
 r750driver=$(cat /proc/scsi/r750/10 2>/dev/null | awk 'NR==1{print $5}')
 
 
@@ -78,14 +87,7 @@ while [ $i -lt $BAYS ];do
 done
 
 
-WIDTH=15
-WIDTH_=$(expr $WIDTH + 1)
-i=0
-j=$(expr $i + $WIDTH)
-k=$(expr $i + $WIDTH + $WIDTH)
-l=$(expr $i + $WIDTH + $WIDTH + $WIDTH)
-
-if [ $card -eq 0 ];then
+if [ "$check" -eq 1 ];then
 	echo	
 	printf "| %s %s %s |\n" $r750tag DriverVersion: $r750driver 
 else
@@ -93,15 +95,27 @@ else
 	printf "| %s %s %s  |\n" $lsitag DriverVersion: $lsidriver
 fi
 
+
+# initialize 4 counters, one for each potenital row in the server
+# 
+
+WIDTH=15
+WIDTH_=$(expr $WIDTH - 1)
+i=0 # first row, start at 0
+j=$(expr $i + $WIDTH) #2nd row offset i by width of the server
+k=$(expr $i + $WIDTH + $WIDTH) # 3rd row offset i by 2 widths
+l=$(expr $i + $WIDTH + $WIDTH + $WIDTH) # 4th row, offset by 3 widths
+
 case $BAYS in
 30)
 	#30unit
 
 	line 24 _
 	while [ $i -lt $WIDTH ];do
-		setBAYstatus $i
+		i_=$(expr $WIDTH_ - $i ) # invert counter for first row
+		setBAYstatus $i_
 		setBAYstatus $j
-		printf "| %s | %s |\n" "${BAYSTATUS[$i]}" "${BAYSTATUS[$j]}"
+		printf "| %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" #displays drives in a snake pattern 
 		#printf "| %-7s | %-7s | %-7s |\n" ${BAY[$i]} ${BAY[$j]} ${BAY[$k]}
 		let i=i+1
 		let j=j+1
@@ -115,10 +129,12 @@ case $BAYS in
 
 	line 24 _
 	while [ $i -lt $WIDTH ];do
-		setBAYstatus $i
+		k_=$(expr $WIDTH + $WIDTH + $WIDTH_ - $i ) #invert counter for 3rd row
+		i_=$(expr $WIDTH_ - $i ) # invert counter for first row
+		setBAYstatus $i_
 		setBAYstatus $j
-		setBAYstatus $k
-		printf "| %s | %s | %s |\n" "${BAYSTATUS[$i]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k]}"	
+		setBAYstatus $k_
+		printf "| %s | %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k_]}"	
 		#printf "| %-7s | %-7s | %-7s |\n" ${BAY[$i]} ${BAY[$j]} ${BAY[$k]}
 		let i=i+1
 		let j=j+1
@@ -131,22 +147,24 @@ case $BAYS in
 60)
 	#60unit
 
-	line 24 _
+	line 32 _
 	while [ $i -lt $WIDTH ];do
-		setBAYstatus $i
+		k_=$(expr $WIDTH + $WIDTH + $WIDTH_ - $i )
+		i_=$(expr $WIDTH_ - $i )
+		setBAYstatus $i_
 		setBAYstatus $j
-		setBAYstatus $k
+		setBAYstatus $k_
 		setBAYstatus $l
-		printf "| %s | %s | %s | %s |\n" "${BAYSTATUS[$i]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k]}" "$BAYSTATUS[$l]}"	
+		printf "| %s | %s | %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k_]}" "${BAYSTATUS[$l]}"	
 		#printf "| %-7s | %-7s | %-7s |\n" ${BAY[$i]} ${BAY[$j]} ${BAY[$k]}
 		let i=i+1
 		let j=j+1
 		let k=k+1
 		let l=l+1
 	done
-	line 24 -
+	line 32 -
 	printf "| %-5s | %-5s | %-5s | %-5s |\n" ROW1 ROW2 ROW3 ROW4
-	line 24 =
+	line 32 =
 	echo	
 	;;
 *)

@@ -1,0 +1,358 @@
+#!/bin/bash
+#BKELLY
+#45DRIVES
+############
+# Main menu of Gluster Configuration tool
+# Takes node hostnames as input
+# adminsters nodes via ssh calls of scripts local to each server
+# PLans to add input of a config file so user simply makes a "etc/hosts" like file
+
+declare -A NODES
+declare -A STATUS
+declare -A HOSTSTATUS
+declare -A VOLSTATUS
+declare -A ZSTATUS
+declare -A MOUNT
+
+BLACK='\033[0;30m'
+BLUE='\033[0;34m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+PURPLE='\033[0;35m'
+BROWN='\033[0;33m'
+LGREY='\033[0;37m'
+DGREY='\033[1;30m'
+LBLUE='\033[1;34m'
+LGREEN='\033[1;32m'
+LCYAN='\033[1;36m'
+LRED='\033[1;31m'
+LPURPLE='\033[1;35m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+COLORS=("" "$BLUE" "$GREEN" "$CYAN"  "$PURPLE" "$LBLUE" "$BROWN" "$LBLUE" "$LGREEN" "$LCYAN" "$LRED" "$RED" "$LPURPLE" "$YELLOW")
+
+dir="/setup"
+gfirewall(){
+	fwcheck=$(ssh root@$node firewall-cmd --zone=public --list-ports | grep 24007-24008| awk '{print $1}')
+	if [ -z "$fwcheck" ];then
+		echo -e "$1 ports 24007,24008 in firewall on $node. (Gluster Daemon, Gluster Management)"
+		ssh root@$node firewall-cmd --zone=public --$1-port=24007-24008/tcp
+	fi
+}
+line() { # takes a number as first input Length, and any character as second input, defaults to "-" if no option
+	if [ -z $2 ]; then
+		printf -v line '%*s' "$1"
+		echo ${line// /-}
+	else
+		printf -v line '%*s' "$1"
+		echo ${line// /$2}
+	fi		
+}
+getinfo() {
+	if [ "${STATUS[$i]}" == "UP" ];then
+		volstatus=$((ssh root@$n gluster vol info | awk 'NR==5{print $2}')2>/dev/null )
+		volname=$((ssh root@$n gluster vol info | awk 'NR==2{print $3}')2>/dev/null )
+		if [ "$volstatus" == "Started" ];then
+			VOLSTATUS[$i]="STARTED"
+		elif [ "$volstatus" == "Stopped" ];then
+			VOLSTATUS[$i]="STOPPED"
+		elif [ "$volstatus" == "Created" ];then
+			VOLSTATUS[$i]="CREATED"
+		else
+			VOLSTATUS[$i]="NO-VOLUME"
+		fi
+		zstatus=$(ssh root@$n zpool list | awk 'NR==2{print $9}')
+		#echo $zstatus
+		if [ "$zstatus" == "ONLINE" ];then
+			ZSTATUS[$i]="ONLINE"
+		elif [ "$zstatus" == "DEGRADED" ];then
+			ZSTATUS[$i]="DEGRADED"
+		else 
+			ZSTATUS[$i]="--"
+		fi
+		l=$((ssh root@$n df -H | grep localhost:$volname )2>/dev/null )
+		#echo $l
+		mount=$(echo $l | awk '{print $6}')
+		size=$(echo $l | awk '{print $2}')
+		if [ ! -z $mount ];then
+			MOUNT[$i]=$(echo "$mount($size)")
+		else
+			MOUNT[$i]="-"
+		fi
+		
+	else
+		VOLSTATUS[$i]="----"
+		ZSTATUS[$i]="----"
+	fi
+}
+setHOSTstatus() {
+	
+	
+	if [ "${STATUS[$1]}" == "UP" ];then
+		printf -v up "$GREEN%-9s$NC" ${STATUS[$1]}  
+		HOSTSTATUS[$1]=$up
+	else
+		printf -v down "$LRED%-9s$NC" ${STATUS[$1]} 
+		HOSTSTATUS[$1]=$down
+	fi
+}
+setMOUNTstatus() {
+	
+	
+	if [ "${MOUNT[$1]}" == "-" ];then
+		printf -v mnt "$LGREY%-9s$NC" ${MOUNT[$1]}
+		mountSTATUS[$1]=$mnt
+	else
+		printf -v mnt "$GREEN%-9s$NC" ${MOUNT[$1]}
+		mountSTATUS[$1]=$mnt
+	fi
+}
+setVOLUMEstatus() {
+
+	if [ "${VOLSTATUS[$1]}" == "STARTED" ];then
+		printf -v up1 "$GREEN%-9s$NC" ${VOLSTATUS[$1]}  
+		volSTATUS[$1]=$up1
+	elif [ "${VOLSTATUS[$1]}" == "STOPPED" ];then
+		printf -v down1 "$LRED%-9s$NC" ${VOLSTATUS[$1]} 
+		volSTATUS[$1]=$down1
+	elif [ "${VOLSTATUS[$1]}" == "CREATED" ];then
+		printf -v create "$LBLUE%-9s$NC" ${VOLSTATUS[$1]} 
+		volSTATUS[$1]=$create
+	else
+		printf -v unknown1 "$LGREY%-9s$NC" ${VOLSTATUS[$1]} 
+		volSTATUS[$1]=$unknown1	
+	fi
+}
+setZPOOLstatus() {
+
+	if [ "${ZSTATUS[$1]}" == "ONLINE" ];then
+		printf -v up2 "$GREEN%-9s$NC" ${ZSTATUS[$1]}  
+		zSTATUS[$1]=$up2
+	elif [ "${ZSTATUS[$1]}" == "DEGRADED" ];then
+		printf -v down2 "$RED%-9s$NC" ${ZSTATUS[$1]} 
+		zSTATUS[$1]=$down2
+	else
+		printf -v unknown3 "$LGREY%-9s$NC" ${ZSTATUS[$1]} 
+		zSTATUS[$1]=$unknown3
+	fi
+}	
+
+#Fill NODES array with input hostnames
+COUNT=0
+for node in $@; do
+	i=$(expr $COUNT + 1)
+	NODES[$i]=$node
+	let COUNT=COUNT+1
+done
+
+
+# Send a packet to each hostname, output is true for repsonse and false for no repsonse
+# Time to wait for response can be changed using the -W option in ping command below
+# Currently set at the minimum, 1 second
+while :
+i=1
+for n in $@;do
+	if ping -c 1 -W 1 $n >/dev/null; then
+		STATUS[$i]="UP"
+	else
+		STATUS[$i]="DOWN"
+	fi
+	let i=i+1
+done
+
+#get the status of Zpool and Gluster Volumes on each node
+i=1
+for n in $@;do
+	getinfo $@
+	let i=i+1
+done	
+
+
+# Display Options
+clear
+do
+echo -e "\n Gluster Cluster 9000"
+line 30 =
+echo -e "1) Zpool Configuration "
+echo -e "2) Gluster Volume Configuration "
+echo -e "3) Mount Volume "
+line 25 -
+echo -e "hosts) Generate /etc/hosts on each Node "
+echo -e "ntp) Configure NTP "
+echo -e "ssh) SSH into Nodes "
+line 25 -
+echo -e "q) Exit\n"
+#echo -e "---------------------------------"
+
+printf "%-8s | %-9s | %-9s | %-9s | %-9s  \n" Node Network Zpool Volume "Mountpoint(Size)"
+line 65 -
+i=1
+for node in $@;do
+	setHOSTstatus $i
+	setVOLUMEstatus $i
+	setZPOOLstatus $i
+	setMOUNTstatus $i
+	printf "%-8s | %-12s | %-12s | %-12s | %-12s \n" "${NODES[$i]}" "${HOSTSTATUS[$i]}" "${zSTATUS[$i]}" "${volSTATUS[$i]}"  "${mountSTATUS[$i]}"
+	let i=i+1
+done
+echo
+read -p "Enter Option: " op0
+
+case $op0 in
+1)
+	clear
+	i=1	
+	for node in $@;do
+		read -p "Configure zpool on ${NODES[$i]} ? (y/n) " yn0
+		#exclude nodes which are down, the ssh command will hang indefinitly if link is down.
+		if [ "$yn0" == y ] && [ "${STATUS[$i]}" == "UP" ];then 
+			ssh -t root@$node "cd $dir ; sh $dir/zpoolconfig.sh $node"
+		#elif [ $i -eq $COUNT ];then
+		#	echo -e "\nNo more Nodes...\n"
+		#else
+		#	echo -e "\nMoving on...\n"
+		fi
+		let i=i+1
+	done
+	echo
+
+	;;
+2)
+	clear
+	i=1
+	for node in $@; do
+		check=$(ssh root@$node systemctl status glusterd | awk 'NR==3{print $2}') ## MORE ROBUST CHECK NEEDED
+		if [ "${STATUS[$i]}" == "UP" ] && [ "$check" != "active" ];then
+			echo -e "Starting gluster service on $node"
+			ssh root@$node systemctl start glusterd
+			ssh root@$node systemctl enable glusterd
+		elif [ "${STATUS[$i]}" == "UP" ];then
+			gfirewall add
+		fi
+
+		let i=i+1
+	done
+	clear
+	i=1
+	for node in $@; do
+		if [ "${STATUS[$i]}" == "UP" ] && [ "$1" != "$node" ]; then
+			ssh root@$1 gluster peer probe $node | awk '{print $1,$2,$3}'
+		fi
+		let i=i+1
+	done
+	echo	
+	#read -p "Configure Gluster Volume? (y/n) " yn0
+	#exclude nodes which are down, the ssh command will hang indefinitly if link is down.
+	if [ "${STATUS[1]}" == "UP" ]; then
+		#echo ${STATUS[1]}
+		ssh -t root@$1 "cd $dir ; sh $dir/glusterconfig.sh $@"
+	fi
+	echo
+	;;
+
+3)	
+	#Mounts volume on each node if they are UP
+	#Checks if mount directory is made yet, makes if not
+	#Mounts the volume. 
+	#If the exit status is 0 (successful) then make an entry in fstab if not already there
+
+	clear
+
+	read -p "Mount Volume: $volname on each Node? (y/n) " yn0
+		
+	i=1
+	for node in $@; do
+		if [ "$yn0" == y ] && [ "${STATUS[$i]}" == "UP" ] && [ "${VOLSTATUS[$i]}" == "STARTED" ];then
+			read -p "Enter mount location $node: " mountdir
+			ssh root@$node mkdir -p $mountdir 2>/dev/null
+			ssh root@$node mount -t glusterfs localhost:$volname $mountdir 2>/dev/null
+			if [ "$?" -eq "0" ];then
+				ssh root@$node df -H | grep $node:$volname
+				fstabcheck=$(ssh root@$node cat /etc/fstab | grep localhost:$volname | awk 'NR==1{print $1}')
+				if [ "$fstabcheck" != "localhost:$volname" ];then
+					ssh root@$node "echo "localhost:$volname $mountdir glusterfs defaults,_netdev 0 0" >> /etc/fstab"
+					
+				fi
+			else
+				echo -e "Volume: $LGREEN$volname$NC already mounted"
+				ssh root@$node df -H | grep $node:$volname		
+			fi
+		elif [ "$yn0" == u ];then
+			read -p "Enter mount location for $node: " mountdir
+			ssh root@$node umount $mountdir 2>/dev/null
+		fi
+		let i=i+1
+	done
+	read -p "Press Enter to continue" con1
+	case $con1 in
+	*)
+		;;
+	esac
+	;;
+
+ssh)
+	clear	
+	i=1
+	for node in $@;do
+		if [ "${STATUS[$i]}" == "UP" ];then
+			read -p "Remote into $node ? (y/n) " yn6
+			if [ "$yn6" == "y" ];then
+				ssh -t root@$node
+			fi
+		fi
+		let i=i+1
+	done
+	;;
+hosts)
+	clear
+	if [ ! -e /tmp/ip ];then
+		touch /tmp/ip
+	else
+		rm -f /tmp/ip
+		touch /tmp/ip
+	fi
+	printf "127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n" > /tmp/ip
+	printf	"::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\n" >> /tmp/ip
+	for node in $@;do
+		##ssh root@$node rm -f /etc/hosts
+		n=$(ssh root@$node hostname -s)
+		ip=$(ssh root@$node hostname -I)
+		printf "%s %s\n" $ip $n >> /tmp/ip
+	done
+	for node in $@;do
+		cat /tmp/ip | ssh root@$node 'cat > /etc/hosts'
+	done
+	;;
+ntp)
+	clear	
+	i=1
+	for node in $@;do
+		if [ "${STATUS[$i]}" == "UP" ];then
+			read -p "Configure NTP on $node ? (y/n) " yn7
+			if [ "$yn7" == "y" ];then
+				ssh -t root@$node "sh /setup/ntpsync.sh"
+			fi
+		fi
+		let i=i+1
+	done
+	;;
+perf)
+	clear
+	java -jar /media/proto/45Drives/RnD/Scripts/GlusterScripts/setup/ProtodGUI.jar &
+	;;
+c)
+	for node in $@;do
+		ssh root@$node "cd /setup ; ./convert"
+	done
+	;;
+p)
+	./push2 $@
+	;;
+[Qq]*)
+	exit 1
+	;;
+*)
+	;;
+esac
+done

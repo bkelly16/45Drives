@@ -37,7 +37,7 @@ i=1
 for node in $@;do
 	if [ "$yn0" == y ] && [ "${STATUS[$i]}" == "UP" ];then 
 		echo -e "\nSyncing files with $node\n---"
-		rsync -avz --delete /media/proto/45Drives/RnD/Scripts/GlusterScripts/setup/ root@$node:$dir/ 
+		rsync -avz --delete /media/proto/45Drives/RnD/Scripts/GlusterScripts/OmegaCentauri_v1.0/ root@$node:$dir/ 
 	fi
 	let i=i+1
 done
