@@ -4,8 +4,6 @@
 ############
 # Main menu of Gluster Configuration tool
 # Takes node hostnames as input
-# adminsters nodes via ssh calls of scripts local to each server
-# PLans to add input of a config file so user simply makes a "etc/hosts" like file
 
 declare -A NODES
 declare -A STATUS
