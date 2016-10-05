@@ -38,6 +38,7 @@ Requires CentOS7.2
 * Passwordless SSH needs to be setup between each node as well as the computer running the config script
   * cd /setup/
   * ./config host1 host2 .... hostn
-
+* First build zpool on each node, then gluster volume, then mount.
+* hosts options will generate /etc/hosts file on each node to contain loclahosts and each node. If other entries were present in each node they will be need to be replaced. If using other hosts in the /etc/hosts file than add the hosts to the the script /gtools_v1.1/config after line 316 (i.e printf "otherhost 192.168.10.10" >> >> /tmp/ip   
 
 
