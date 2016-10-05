@@ -2,10 +2,10 @@
 
 Requires CentOS7.2
 
-- Setup networking, Internet connection required
-- Update system 
-- Only preconfig file is required
-- Execute on each server
+* Setup networking, Internet connection required
+* Update system 
+* Only preconfig file is required
+* Execute on each server
  * ./preconfig
 
 - Installs
