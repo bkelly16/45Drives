@@ -40,7 +40,7 @@ Requires CentOS7.2
   * ./config host1 host2 .... hostn
 * Options  
  * First build zpool on each node (option "1"), then gluster volume (option "2"), then mount (option "3") and answer the question presented by UI.
- * "hosts" options will generate /etc/hosts file on each node to contain loclahosts and each node. If other entries were present in each node they will be need to be replaced. If using other hosts in the /etc/hosts file than add the hosts to the the script /gtools_v1.1/config after line 316 (i.e printf "otherhost 192.168.10.10" >> >> /tmp/ip   
+ * "hosts" options will generate /etc/hosts file on each node to contain localhosts and each node. If other entries were present in each node they will be need to be replaced. If using other hosts in the /etc/hosts file than add the hosts to the the script /gtools_v1.1/config after line 316 (i.e printf "otherhost 192.168.10.10" >> >> /tmp/ip   
  * "ssh" ssh's into each node
  * "ntp" configure ntp time servers on each node. It defaults to "centos.pool.ntp.org" but prompts for other options.
 
