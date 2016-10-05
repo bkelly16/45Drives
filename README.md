@@ -6,7 +6,7 @@ Requires CentOS7.2
 - Update system 
 - Only preconfig file is required
 - Execute on each server
-- ./preconfig
+ * ./preconfig
 
 - Installs
 ----------------------------
