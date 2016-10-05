@@ -27,7 +27,7 @@ Requires CentOS7.2
 * Example vdev_id.conf files for each 45drives server chassis (slot/HBA)
 * Need to manually change the PCI bus ID in the alias files (vdev_id.conf) depending where the cards are physically located in the motherboard before drive mapping will take effect.
  * pci-0000:03:00.0-scsi-0:0:1:0
- * "0.300.0" is the card PCI bus ID, this can identifed using: lspci | grep HighPoint (LSI)
+ * "0.30.0" is the card PCI bus ID, this can identifed using: lspci | grep HighPoint (LSI)
  * "0:0:1:0"  is the drive ID.This does not need ot be changed in teh example files except for the second card. 
  * Change "0:0:20:0" to "0:0:23:0", due to the physical layout of the system.
  
