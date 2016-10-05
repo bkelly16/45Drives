@@ -28,7 +28,7 @@ Requires CentOS7.2
 
 - Using gtools:
 ----------------------------
-* Congifuration can be done on any computer on the same network as the cluster including the nodes themselves
+* Configuration can be done on any computer on the same network as the cluster including the nodes themselves
 * /etc/hosts file must contain each host used in config if no DNS coinfigured
 * Passwordless SSH needs to be setup between each node as well as the computer running the config script
   * cd /setup/
