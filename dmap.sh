@@ -8,7 +8,7 @@ if [ $# -eq 0 ]; then
 	if [ "$hba" == "r750" ];then
 		hba="0750"
 	elif [ "$hba" != "LSI" ];then
-		echo "Unsupported controller, try configurating manaully"
+		echo "Unsupported controller, try configurating manually"
 		exit
 	fi
 	read -p "Chassis Type? (30,45, or 60) " chassis
