@@ -24,4 +24,3 @@ while [ $slot -lt 22 ];do
         fi
         let slot=slot+1
 done
-~
