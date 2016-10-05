@@ -39,7 +39,6 @@ case $chassis in
         	echo "alias 1-$slot     /dev/disk/by-path/pci-0000:$card1-scsi-0:0:$(expr $slot - 1):0" >> /etc/zfs/vdev_id.conf.test
         	let slot=slot+1
 	done
-	cat /etc/zfs/vdev_id.conf.test
 	;;
 
 45)
@@ -63,7 +62,6 @@ case $chassis in
         	fi
         	let slot=slot+1
 	done
-	cat /etc/zfs/vdev_id.conf.test
 	;;
 60)
 	card1=$(lspci | grep $hba | awk 'NR==1{print $1}')
@@ -82,7 +80,7 @@ case $chassis in
         	echo "alias 2-$slot     /dev/disk/by-path/pci-0000:$card2-scsi-0:0:$(expr $slot - 1):0" >> /etc/zfs/vdev_id.conf.test
         	let slot=slot+1
 	done
-	cat /etc/zfs/vdev_id.conf.test
 	;;
 esac
 
+cat /etc/zfs/vdev_id.conf.test
