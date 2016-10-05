@@ -28,7 +28,8 @@ Requires CentOS7.2
 
 - Using gtools:
 ----------------------------
-* ./config host[@]
+cd /setup/
+./config host1 host2 .... hostn
 
 
 
