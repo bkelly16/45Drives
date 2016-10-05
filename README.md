@@ -4,7 +4,7 @@ Requires CentOS7.2
 
 * Setup networking, Internet connection required
 * Update system 
-* Only preconfig file is required
+* Only preconfig file is required for install
 * Execute on each server
  * ./preconfig
 
