@@ -23,21 +23,21 @@ zfsrepo=http://download.zfsonlinux.org/epel/zfs-release
 epel=https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-8.noarch.rpm
 
 ## Install wget & Development tools for current kernel 
-rpm -qa | grep -qw kernel-devel-$(uname -r) || yum install kernel-devel $2
+rpm -qa | grep -qw kernel-devel-$(uname -r) || yum install kernel-devel $1
 
 ## Install EPEL repository
 rpm -qa | grep -qw epel || yum install $epel 
 
 ## Install gluster repo,main,client,and server packages
-rpm -qa | grep -q centos-release-gluster || yum install centos-release-gluster $2
-rpm -qa | grep -qw glusterfs-3 || yum install glusterfs $2
-rpm -qa | grep -qw glusterfs-fuse || yum install glusterfs-fuse $2
-rpm -qa | grep -qw glusterfs-server || yum install glusterfs-server $2
+rpm -qa | grep -q centos-release-gluster || yum install centos-release-gluster $1
+rpm -qa | grep -qw glusterfs-3 || yum install glusterfs $1
+rpm -qa | grep -qw glusterfs-fuse || yum install glusterfs-fuse $1
+rpm -qa | grep -qw glusterfs-server || yum install glusterfs-server $1
 
 ## Install zfs
-rpm -qa | grep -qw zfs-release || yum install $zfsrepo$(rpm -E %dist).noarch.rpm $2
+rpm -qa | grep -qw zfs-release || yum install $zfsrepo$(rpm -E %dist).noarch.rpm $1
 gpg --quiet --with-fingerprint /etc/pki/rpm-gpg/RPM-GPG-KEY-zfsonlinux 
-rpm -qa | grep -qw zfs-dkms || yum install zfs $2
+rpm -qa | grep -qw zfs-dkms || yum install zfs $1
 if [ ! -d /etc/rc.modules ];then
 	touch /etc/rc.modules
 fi
