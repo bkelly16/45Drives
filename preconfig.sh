@@ -26,7 +26,7 @@ epel=https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-8.noarch.rp
 rpm -qa | grep -qw kernel-devel-$(uname -r) || yum install kernel-devel $1
 
 ## Install EPEL repository
-rpm -qa | grep -qw epel || yum install $epel 
+rpm -qa | grep -qw epel || yum install $epel $1
 
 ## Install gluster repo,main,client,and server packages
 rpm -qa | grep -q centos-release-gluster || yum install centos-release-gluster $1
