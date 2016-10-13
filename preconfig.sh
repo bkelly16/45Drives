@@ -28,6 +28,9 @@ rpm -qa | grep -qw kernel-devel-$(uname -r) || yum install kernel-devel $1
 ## Install EPEL repository
 rpm -qa | grep -qw epel || yum install $epel $1
 
+## Install PCI utils
+rpm -qa | grep -qw pciutils-3 || yum install pciutils $1
+
 ## Install gluster repo,main,client,and server packages
 rpm -qa | grep -q centos-release-gluster || yum install centos-release-gluster $1
 rpm -qa | grep -qw glusterfs-3 || yum install glusterfs $1
