@@ -41,7 +41,6 @@ esac
 
 while :
 check=$(zpool list | wc -l) #1 if no pool; and bigger than than pool present
-check2=$(
 clear
 do
 echo -e "\nZpool Configuration"
