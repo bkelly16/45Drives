@@ -32,6 +32,7 @@ rpm -qa | grep -qw epel || yum install $epel $1
 ## Install PCI utils
 rpm -qa | grep -qw pciutils-3 || yum install pciutils $1
 
+
 ## Install gluster repo,main,client,and server packages
 rpm -qa | grep -q centos-release-gluster || yum install centos-release-gluster $1
 rpm -qa | grep -qw glusterfs-3 || yum install glusterfs $1
@@ -57,14 +58,11 @@ fi
 if [ -e $wd/gtools.tar.gz ];then
 	rm -f $wd/gtools.tar.gz
 fi
-curl -s -o $wd/gtools.tar.gz $gtools 
-tar -zxf $wd/gtools.tar.gz -C $wd
+curl -L $gtools | tar -zx -C $wd
+
 installdir=/setup
 if [ ! -d $installdir ];then
         mkdir $installdir
-fi
-if [ ! -d /etc/zfs ];then
-        mkdir /etc/zfs
 fi
 echo -e "\nExtracting Cluster Configuation Tools to /setup"
 cp -r $wd/gtools_v1.1/* $installdir/
