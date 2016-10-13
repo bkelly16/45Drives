@@ -168,7 +168,7 @@ case $BAYS in
 	echo	
 	;;
 *)
-	echo -e "\nError: Unable to Display Drive Map\nConfigure vdev_id.conf\n"
+	echo -e "\nError!:\nUnable to Display Drive Map\nConfigure Drive Aliasing (1)\n"
 	;;
 esac
 
