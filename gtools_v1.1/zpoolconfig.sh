@@ -41,6 +41,7 @@ esac
 
 while :
 check=$(zpool list | wc -l) #1 if no pool; and bigger than than pool present
+check2=$(
 clear
 do
 echo -e "\nZpool Configuration"
@@ -65,6 +66,8 @@ echo -e "q) Exit Zpool Configuration"
 line 30 -
 if [ "$check" -gt 1 ];then
 	sh lsvdev.sh
+elif [ -d /dev/disk/by-vdev/ ];then
+	sh lsdev.sh
 fi
 read -p "Enter an Option: " op0
 case $op0 in
