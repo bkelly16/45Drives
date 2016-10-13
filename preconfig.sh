@@ -67,7 +67,6 @@ if [ ! -d /etc/zfs ];then
 fi
 echo -e "\nExtracting Cluster Configuation Tools to /setup"
 cp -r $wd/gtools_v1.1/* $installdir/
-cp -r $wd/alias/* /etc/zfs/
 
 ## Download and install r750 driver
 r750=$(dmesg | grep r750 | awk 'NR==3{print $3}')
