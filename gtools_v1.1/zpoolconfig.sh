@@ -31,6 +31,14 @@ line() { # takes a number as first input Length, and any character as second inp
 		echo ${line// /$2}
 	fi		
 }
+pause(){ # Waits for user input to continue
+read -p "Press Enter to continue" con
+case $con in
+*)
+	;;
+esac
+}
+
 while :
 check=$(zpool list | wc -l) #1 if no pool; and bigger than than pool present
 clear
@@ -66,65 +74,18 @@ case $op0 in
 		read -p "Aliasing is already configured, are you sure you want to reconfigure? [Y/n] " yn2
 		case $yn2 in
 		[Yy]*)
-			read -p "Which HBA cards are you using? (r750 or LSI) :  " op13
-			read -p "Which Size Storinator is $NODE? (30, 45, or 60) :  " op14
-			if [ $op13 == r750 ] && [ $op14 == 30 ]; then
-				cp /etc/zfs/vdev_id.conf.r750_q30 /etc/zfs/vdev_id.conf
-				udevadm trigger
-			fi
-			if [ $op13 == r750 ] && [ $op14 == 45 ]; then
-				cp /etc/zfs/vdev_id.conf.r750_s45 /etc/zfs/vdev_id.conf
-				udevadm trigger
-			fi
-			if [ $op13 == r750 ] && [ $op14 == 60 ]; then
-				cp /etc/zfs/vdev_id.conf.r750_xl60 /etc/zfs/vdev_id.conf
-				udevadm trigger
-			fi
-			if [ $op13 == LSI ] && [ $op14 == 30 ]; then
-				cp /etc/zfs/vdev_id.conf.LSIq30 /etc/zfs/vdev_id.conf
-				udevadm trigger
-			fi
-			if [ $op13 == LSI ] && [ $op14 == 45 ]; then
-				cp /etc/zfs/vdev_id.conf.LSIs45 /etc/zfs/vdev_id.conf
-				udevadm trigger
-			fi
-			if [ $op13 == LSI ] && [ $op14 == 60 ]; then
-				cp /etc/zfs/vdev_id.conf.LSIxl60 /etc/zfs/vdev_id.conf
-				udevadm trigger
-			fi
+			sh /setup/dmap.sh 
+			pause
 			;;
 		[nN]*)
 			;;
 		esac		
 	else	
-		read -p "Which HBA cards are you using? (r750 or LSI) :  " op13
-		read -p "Which Size Storinator is $NODE? (30, 45, or 60) :  " op14
-		if [ $op13 == r750 ] && [ $op14 == 30 ]; then
-			cp /etc/zfs/vdev_id.conf.r750_q30 /etc/zfs/vdev_id.conf
-			udevadm trigger
-		fi
-		if [ $op13 == r750 ] && [ $op14 == 45 ]; then
-			cp /etc/zfs/vdev_id.conf.r750_s45 /etc/zfs/vdev_id.conf
-			udevadm trigger
-		fi
-		if [ $op13 == r750 ] &&  [ $op14 == 60 ]; then
-			cp /etc/zfs/vdev_id.conf.r750_xl60 /etc/zfs/vdev_id.conf
-			udevadm trigger
-		fi
-		if [ $op13 == LSI ] && [ $op14 == 30 ]; then
-			cp /etc/zfs/vdev_id.conf.LSIq30 /etc/zfs/vdev_id.conf
-			udevadm trigger
-		fi
-		if [ $op13 == LSI ] && [ $op14 == 45 ]; then
-			cp /etc/zfs/vdev_id.conf.LSIs45 /etc/zfs/vdev_id.conf
-			udevadm trigger
-		fi
-		if [ $op13 == LSI ] && [ $op14 == 60 ]; then
-			cp /etc/zfs/vdev_id.conf.LSIxl60 /etc/zfs/vdev_id.conf
-			udevadm trigger
-		fi
+		sh /setup/dmap.sh
+		pause
 	fi
 	;;
+
 2)
 	clear
 
