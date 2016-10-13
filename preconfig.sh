@@ -18,7 +18,7 @@ else
 	touch $wd/install.log
 fi
 
-gtools=https://github.com/bkelly16/45Drives/blob/master/gtools.tar.gz	
+gtools=https://github.com/bkelly16/45Drives/raw/master/gtools.tar.gz	
 repo=http://www.45drives.com/downloads
 zfsrepo=http://download.zfsonlinux.org/epel/zfs-release
 epel=https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-8.noarch.rpm
