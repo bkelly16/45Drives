@@ -70,12 +70,12 @@ echo -e "\nExtracting Cluster Configuation Tools to /setup"
 cp -r $wd/gtools_v1.1/* $installdir/
 
 ## Download and install r750 driver
-r750=$(dmesg | grep r750 | awk 'NR==3{print $3}')
-if [ -z $r750 ];then
-	curl -s -o /$(pwd)/r750_v1.2.7_linux.tar.gz $repo/R750_v1.2.7_linux.tar.gz
-	tar -zxf /$(pwd)/r750_v1.2.7_linux.tar.gz -C /$(pwd)/
-	./r750-linux-src-v1.2.7-16_08_23.bin
-fi
+#r750=$(dmesg | grep r750 | awk 'NR==3{print $3}')
+#if [ -z $r750 ];then
+#	curl -s -o /$(pwd)/r750_v1.2.7_linux.tar.gz $repo/R750_v1.2.7_linux.tar.gz
+#	tar -zxf /$(pwd)/r750_v1.2.7_linux.tar.gz -C /$(pwd)/
+#	./r750-linux-src-v1.2.7-16_08_23.bin
+#fi
 
 echo -e "All Done...\nVerifying Install..."
 status kernel-devel-$(uname -r)
