@@ -43,13 +43,37 @@ echo "# name     fully qualified or base name of device link" >> /etc/zfs/vdev_i
 
 case $chassis in
 30)	
-	card1=$(lspci | grep $hba | awk 'NR==1{print $1}')
-	#Card 1
-	slot=1
-	while [ $slot -lt 31 ];do
-        	echo "alias 1-$slot     /dev/disk/by-path/pci-0000:$card1-scsi-0:0:$(expr $slot - 1):0" >> /etc/zfs/vdev_id.conf
-        	let slot=slot+1
-	done
+	case $hba in
+	0750)
+		card1=$(lspci | grep $hba | awk 'NR==1{print $1}')
+		#Card 1
+		slot=1
+		while [ $slot -lt 31 ];do
+        		echo "alias 1-$slot     /dev/disk/by-path/pci-0000:$card1-scsi-0:0:$(expr $slot - 1):0" >> /etc/zfs/vdev_id.conf
+        		let slot=slot+1
+		done
+		;;
+	Adaptec)
+		card1=$(lspci | grep $hba | awk 'NR==1{print $1}')
+		card2=$(lspci | grep $hba | awk 'NR==2{print $1}')
+
+		#Card 1
+		slot=1
+		while [ $slot -lt 17 ];do	
+        		echo "alias 1-$slot     /dev/disk/by-path/pci-0000:$card1-scsi-0:2:$(expr $slot - 1):0" >> /etc/zfs/vdev_id.conf
+        		let slot=slot+1
+		done
+		#Card 2
+		slot=1
+		while [ $slot -lt 15 ];do	
+        		echo "alias 2-$slot     /dev/disk/by-path/pci-0000:$card2-scsi-0:2:$(expr $slot - 1):0" >> /etc/zfs/vdev_id.conf
+        		let slot=slot+1
+		done
+		;;
+	LSI)
+		echo "Not implemented yet :("
+		;;
+	esac
 	;;
 
 45)
