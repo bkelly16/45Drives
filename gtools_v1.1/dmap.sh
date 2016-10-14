@@ -1,36 +1,37 @@
 
 #!/bin/bash
+gethba() {
+	case $1 in
+	r750|R750|r)
+		hba="0750"
+		;;
+	LSI|lsi|l)
+		hba="LSI"
+		;;
+	Adaptec|adaptec|a) 
+		hba="Adaptec"
+		;;
+	*)
+		echo "Unsupported controller, try configurating manually"
+		exit
+		;;	
+	esac
+}
+
 if [ -e /etc/zfs/vdev_id.conf ];then
         rm -f /etc/zfs/vdev_id.conf
 fi
 
 if [ $# -eq 0 ]; then
-	read -p "Disk Controller? (r750) " hba
-	if [ "$hba" == "r750" ] || [ "$hba" == "R750" ];then
-		hba="0750"
-	elif [ "$hba" == "LSI" ];then
-		hba="LSI"
-	elif [ "$hba" == "Adaptec" ];then
-		hba="Adpatec"
-	else
-		echo "Unsupported controller, try configurating manually"
-		exit
-	fi
+	read -p "Disk Controller? " hba
+	gethba $hba
 	read -p "Chassis Type? (30,45, or 60) " chassis
 else
 	hba=$1
+	gethba $hba
 	chassis=$2
-	if [ "$hba" == "r750" ] || [ "$hba" == "R750" ] || "$hba" == "r" ] ;then
-		hba="0750"
-	elif [ "$hba" == "LSI" ]|| [ "$hba" == "lsi" ] || "$hba" == "l" ] ;then
-		hba="LSI"
-	elif [ "$hba" == "Adaptec" ] || [ "$hba" == "a" ];then
-		hba="Adpatec"
-	else
-		echo "Unsupported controller, try configurating manually"
-		exit
-	fi
 fi
+
 if [ "$chassis" -eq 30 ] || [ "$chassis" -eq 45 ] || [ "$chassis" -eq 60 ];then
 	:
 else
@@ -92,7 +93,7 @@ case $chassis in
 		done
 		#Card 3
 		slot=1
-		while [ $slot -lt 17 ];do	
+		while [ $slot -lt 14 ];do	
         		echo "alias 1-$slot     /dev/disk/by-path/pci-0000:$card3-scsi-0:2:$(expr $slot - 1):0" >> /etc/zfs/vdev_id.conf
         		let slot=slot+1
 		done
