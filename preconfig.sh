@@ -58,7 +58,7 @@ fi
 if [ -e $wd/gtools.tar.gz ];then
 	rm -f $wd/gtools.tar.gz
 fi
-curl -L $gtools | tar -zx -C $wd
+curl -s -L $gtools | tar -zx -C $wd
 
 installdir=/setup
 if [ ! -d $installdir ];then
