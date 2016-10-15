@@ -1,24 +1,23 @@
 # 45Drives
 
-Requires CentOS7.2
+Requires CentOS7.2 x86_64 on each node in cluster
 
 * Setup networking, Internet connection required
-* Update system 
+* Update OS 
 * Only preconfig file is required for install
 * Execute on each server
  * ./preconfig
 
-- Installs
-----------------------------
-* Kernel Development Packages
-* EPEL Repo
-* CentOS GLuster Repo
-* Gluster 3.8
-* Gluster FUSE 
-* Gluster Server
-* zfs repo
-* zfs (DKMS packages)
-* gtools
+* Installs
+ * Kernel Development Packages
+ * EPEL Repo
+ * CentOS GLuster Repo
+ * Gluster 3.8
+ * Gluster FUSE 
+ * Gluster Server
+ * zfs repo
+ * zfs (DKMS packages)
+ * gtools
 
 
 - Drive Alias Configuration:
