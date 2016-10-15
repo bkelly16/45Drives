@@ -28,7 +28,7 @@ Requires CentOS7.2
  * Usage:
  * Give controller name and chassis when running script. Order matters, "sh dmap.sh R750 45"
  * (R750|LSI|Adaptec - 30|45|60).
- * If no input script will promt for user input.
+ * If no input script will prompt for user input.
 
 * Manual Configuration
  * Need to manually change the PCI bus ID in the alias files (vdev_id.conf) depending where the cards are physically located in the motherboard before drive mapping will take effect.
