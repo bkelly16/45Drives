@@ -24,14 +24,14 @@ Requires CentOS7.2
 - Drive Alias Configuration:
 ----------------------------
 * Automatic Configuration
-* Script dmap.sh auto generate vdev_id.conf.
+ * Script dmap.sh auto generate vdev_id.conf.
  * Usage:
  * Give controller name and chassis when running script. HBA controller is first, and chassis size second. 
   * (R750|LSI|Adaptec - 30|45|60).
  * If no input script will promt for user input.
 
 * Manual Configuration
-* Need to manually change the PCI bus ID in the alias files (vdev_id.conf) depending where the cards are physically located in the motherboard before drive mapping will take effect.
+ * Need to manually change the PCI bus ID in the alias files (vdev_id.conf) depending where the cards are physically located in the motherboard before drive mapping will take effect.
  * pci-0000:03:00.0-scsi-0:0:1:0
  * "0.30.0" is the card PCI bus ID, this can identifed using: lspci | grep HighPoint (LSI)
  * "0:0:1:0"  is the drive ID.This does not need ot be changed in the example files except for the second card. 
