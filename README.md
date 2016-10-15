@@ -26,8 +26,8 @@ Requires CentOS7.2
 * Automatic Configuration
  * Script dmap.sh auto generate vdev_id.conf.
  * Usage:
- * Give controller name and chassis when running script. HBA controller is first, and chassis size second. 
-  * (R750|LSI|Adaptec - 30|45|60).
+ * Give controller name and chassis when running script. Order matters, "sh dmap.sh R750 45"
+ * (R750|LSI|Adaptec - 30|45|60).
  * If no input script will promt for user input.
 
 * Manual Configuration
