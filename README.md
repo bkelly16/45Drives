@@ -4,7 +4,7 @@ Requires CentOS7.2 x86_64 on each node in cluster
 
 * Setup networking, Internet connection required
 * Update OS 
-* Only preconfig file is required for install
+* Only preconfig file, it will download all the files it needs.
 * Execute on each server
  * ./preconfig
 
