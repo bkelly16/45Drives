@@ -23,8 +23,11 @@ Requires CentOS7.2
 
 - Drive Alias Configuration:
 ----------------------------
-* script dmap.sh auto generate vdev_id.conf.
-** Usage
+* Script dmap.sh auto generate vdev_id.conf.
+ * Usage:
+ * Give controller name and chassis when running script. HBA controller is first, and chassis size second. 
+  * (R750|LSI|Adaptec - 30|45|60).
+ * If no input script will promt for user input.
 
 * Need to manually change the PCI bus ID in the alias files (vdev_id.conf) depending where the cards are physically located in the motherboard before drive mapping will take effect.
  * pci-0000:03:00.0-scsi-0:0:1:0
