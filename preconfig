@@ -66,6 +66,7 @@ if [ ! -d $installdir ];then
 fi
 echo -e "\nExtracting Cluster Configuation Tools to /setup"
 cp -r $wd/gtools_v1.1/* $installdir/
+chmod -R +x $installdir/
 
 ## Download and install r750 driver
 #r750=$(dmesg | grep r750 | awk 'NR==3{print $3}')
