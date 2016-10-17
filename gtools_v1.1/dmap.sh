@@ -2,7 +2,7 @@
 #!/bin/bash
 gethba() {
 	case $1 in
-	r750|R750|r)
+	R750|r750|r)
 		hba="0750"
 		;;
 	LSI|lsi|l)
