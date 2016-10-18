@@ -13,6 +13,8 @@ done
 i=0
 while [ "$i" -lt $BAYS ];do 
 	parted -s /dev/disk/by-vdev/${BAY[$i]} mklabel loop 2&>/dev/null
-	echo -e "device ${BAY[$i]} has been wiped"
+	if [ $? -eq 0 ]; then
+		echo -e "device ${BAY[$i]} has been wiped"
+	fi
 	let i=i+1
 done
