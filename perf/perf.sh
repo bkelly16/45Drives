@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ $# -eq 0 ];then
-	echo "Usage ./perf.sh {blocksize} {filesize}"
+	echo "Usage ./perf.sh {blocksize} {filesize} optional {IO/s Mode (-O)}"
 	exit 1
 fi
 bs=$1
