@@ -27,12 +27,14 @@ if [ $length -gt 1 ];then
 fi
 if [ $length -gt 1 ] && [ $r1 -lt $r0 ] && [ $w1 -lt $w0 ];then
 	cat run_results
+	echo
 	echo "Saturation reached"
 	echo "One more run...."
 	sh bench.sh $i $bs $fs $3
 	exit 1
 fi
 cat run_results
+echo
 sh bench.sh $i $bs $fs $3
 
 done
