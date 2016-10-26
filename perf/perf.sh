@@ -26,8 +26,9 @@ if [ $length -gt 1 ];then
 	w0=$(cat run_results | awk -v l="$(expr $length - 1 )" 'NR==l{print $6}')
 fi
 if [ $length -gt 1 ] && [ $r1 -lt $r0 ] && [ $w1 -lt $w0 ];then
-	sh bench.sh $i $bs $fs $3
 	echo "Saturation reached"
+	echo "One more run...."
+	sh bench.sh $i $bs $fs $3
 	exit 1
 fi
 
