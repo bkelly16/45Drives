@@ -4,7 +4,7 @@ if [ $# -eq 0 ];then
 	exit 1
 fi
 
-echo "Test in Progress (Thread $1)"
+echo -e "Test in Progress (Thread $1)\n"
 iozone -t $1 -i 0 -i 1 -r $2 -s $3 -+n $4 > tee tmp_results
 
 write=$(cat tmp_results | grep writers | awk 'NR==1{print $9}' | cut -f1 -d".")
