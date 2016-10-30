@@ -71,7 +71,53 @@ case $chassis in
 		done
 		;;
 	LSI)
-		echo "Not implemented yet :("
+		card1=$(lspci | grep $hba | awk 'NR==1{print $1}')
+		card2=$(lspci | grep $hba | awk 'NR==2{print $1}')		
+		portcount=4
+		drivecount=4
+		
+		#Card 1
+		port=1
+		while [ $port -lt $(expr $portcount + 1) ];do
+			t=$((port*4))
+			i=1
+			while [ $i -lt $(expr $drivecount + 1) ];do
+				if [ $port -eq 1 ];then
+					slot=$i
+				elif [ $port -eq 2 ];then
+					slot=$(expr $i + 4)
+				elif [ $port -eq 3 ];then
+					slot=$(expr $i + 8)
+				elif [ $port -eq 4 ];then
+					slot=$(expr $i + 12)
+				fi
+				echo "alias 1-$slot     /dev/disk/by-path/pci-0000:$card1-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.conf
+				let i=i+1
+			done
+			let port=port+1
+		done
+		
+		#card 2
+		port=1
+		while [ $port -lt $(expr $portcount + 1) ];do
+			t=$((port*4))
+			i=1
+			while [ $i -lt $(expr $drivecount + 1) ];do
+				if [ $port -eq 1 ];then
+					slot=$i
+				elif [ $port -eq 2 ];then
+					slot=$(expr $i + 4)
+				elif [ $port -eq 3 ];then
+					slot=$(expr $i + 8)
+				elif [ $port -eq 4 ];then
+					slot=$(expr $i + 12)
+				fi
+				echo "alias 2-$slot     /dev/disk/by-path/pci-0000:$card2-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.conf
+				let i=i+1
+			done
+			let port=port+1
+		done
+				
 		;;
 	esac
 	;;
@@ -123,7 +169,72 @@ case $chassis in
 		done
 		;;
 	LSI)	
-		echo "Not implemented yet :("
+		card1=$(lspci | grep $hba | awk 'NR==1{print $1}')
+		card2=$(lspci | grep $hba | awk 'NR==2{print $1}')
+		card3=$(lspci | grep $hba | awk 'NR==3{print $1}')
+		portcount=4
+		drivecount=4
+		
+		#Card 1
+		port=1
+		while [ $port -lt $(expr $portcount + 1) ];do
+			t=$((port*4))
+			i=1
+			while [ $i -lt $(expr $drivecount + 1) ];do
+				if [ $port -eq 1 ];then
+					slot=$i
+				elif [ $port -eq 2 ];then
+					slot=$(expr $i + 4)
+				elif [ $port -eq 3 ];then
+					slot=$(expr $i + 8)
+				elif [ $port -eq 4 ];then
+					slot=$(expr $i + 12)
+				fi
+				echo "alias 1-$slot     /dev/disk/by-path/pci-0000:$card1-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.conf
+				let i=i+1
+			done
+			let port=port+1
+		done	
+		#card 2
+		port=1
+		while [ $port -lt $(expr $portcount + 1) ];do
+			t=$((port*4))
+			i=1
+			while [ $i -lt $(expr $drivecount + 1) ];do
+				if [ $port -eq 1 ];then
+					slot=$i
+				elif [ $port -eq 2 ];then
+					slot=$(expr $i + 4)
+				elif [ $port -eq 3 ];then
+					slot=$(expr $i + 8)
+				elif [ $port -eq 4 ];then
+					slot=$(expr $i + 12)
+				fi
+				echo "alias 2-$slot     /dev/disk/by-path/pci-0000:$card2-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.conf
+				let i=i+1
+			done
+			let port=port+1
+		done
+		#card 3
+		port=1
+		while [ $port -lt $(expr $portcount + 1) ];do
+			t=$((port*4))
+			i=1
+			while [ $i -lt $(expr $drivecount + 1) ];do
+				if [ $port -eq 1 ];then
+					slot=$i
+				elif [ $port -eq 2 ];then
+					slot=$(expr $i + 4)
+				elif [ $port -eq 3 ];then
+					slot=$(expr $i + 8)
+				elif [ $port -eq 4 ];then
+					slot=$(expr $i + 12)
+				fi
+				echo "alias 2-$slot     /dev/disk/by-path/pci-0000:$card2-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.conf
+				let i=i+1
+			done
+			let port=port+1
+		done
 		;;
 	esac	
 	;;
