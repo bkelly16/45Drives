@@ -13,6 +13,7 @@ gethba() {
 		;;
 	3740|h)
 		hba="3740"
+		;;
 	*)
 		echo "Unsupported controller, try configurating manually"
 		exit
