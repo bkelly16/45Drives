@@ -32,16 +32,16 @@ setBAYtemp() {
 	temp=$(hddtemp /dev/disk/by-vdev/${BAY[$1]} | awk '{print $4}')
 	tempstatus=$(cat $temp | tr -dc '[:alnum:]\n\r' | cut -f1 -d"C")
 	if [ -z $temp ];then
-		printf -v notemp "$GREY%-5s$NC" "notemp"
+		printf -v notemp "$GREY%-7s$NC" "notemp"
 		BAYSTATUS[$1]=$notemp	
 	elif [ "$tempstatus" -lt "41" ];then
-		printf -v good "$GREEN%-5s$NC" $temp  
+		printf -v good "$GREEN%-7s$NC" $temp  
 		BAYSTATUS[$1]=$good
 	elif [ "$tempstatus" -lt "60" ];then
-		printf -v caution "$YELLOW%-5s$NC" $temp 	
+		printf -v caution "$YELLOW%-7s$NC" $temp 	
 		BAYSTATUS[$1]=$caution
 	else
-		printf -v toohot "$RED%-5s$NC" $temp 
+		printf -v toohot "$RED%-7s$NC" $temp 
 		BAYSTATUS[$1]=$toohot
 	fi
 }
