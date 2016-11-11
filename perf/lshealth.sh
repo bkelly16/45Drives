@@ -29,23 +29,19 @@ line() { # takes a number as first input Length, and any character as second inp
 
 setBAYtemp() {
 	
-	temp=$(hddtemp /dev/disk/by-vdev/${BAY[$1]} | awk '{print $4}')
-	tempstatus=$(echo $temp | tr -dc '[:alnum:]\n\r' | cut -f1 -d"C")
-	if [ -z $temp ];then
-		printf -v notemp "$GREY%-7s$NC" "notemp"
-		BAYSTATUS[$1]=$notemp	
-	elif [ "$tempstatus" -lt "41" ];then
-		printf -v good "$GREEN%-7s$NC" $temp  
-		BAYSTATUS[$1]=$good
-	elif [ "$tempstatus" -lt "60" ];then
-		printf -v caution "$YELLOW%-7s$NC" $temp 	
-		BAYSTATUS[$1]=$caution
-	else
-		printf -v toohot "$RED%-7s$NC" $temp 
-		BAYSTATUS[$1]=$toohot
+	health=$(smartctl -H /dev/disk/by-vdev/1-3 | grep -i health | awk -F: '{print $2}')
+	if [ -z $health ];then
+		printf -v nohealth "$GREY%-7s$NC" "N/A"
+		BAYSTATUS[$1]=$nohealth	
+	elif [ "$health" == "PASSED" ];then
+		printf -v passed "$GREEN%-7s$NC" $health  
+		BAYSTATUS[$1]=$passed
+	else 
+		printf -v failing "$RED%-7s$NC" $health 	
+		BAYSTATUS[$1]=$failing
 	fi
 }
-rpm -qa | grep -qw hddtemp || yum install hddtemp
+rpm -qa | grep -qw smartmontools || yum install smartmontools
 
 BAYS=$((cat /etc/zfs/vdev_id.conf| awk "NR>2" | wc -l) 2>/dev/null)
 #BAYS=$(expr $BAYS_  ) #Exclude comments at top of config file
