@@ -31,13 +31,13 @@ setBAYtemp() {
 	
 	health=$(smartctl -H /dev/disk/by-vdev/1-3 | grep -i health | awk -F: '{print $2}')
 	if [ -z $health ];then
-		printf -v nohealth "$GREY%-7s$NC" "N/A"
+		printf -v nohealth "$GREY%s$NC" "N/A"
 		BAYSTATUS[$1]=$nohealth	
-	elif [ "$health" == "PASSED" ];then
-		printf -v passed "$GREEN%-7s$NC" $health  
+	elif [ $health = "PASSED" ];then
+		printf -v passed "$GREEN%s$NC" $health  
 		BAYSTATUS[$1]=$passed
 	else 
-		printf -v failing "$RED%-7s$NC" $health 	
+		printf -v failing "$RED%s$NC" $health 	
 		BAYSTATUS[$1]=$failing
 	fi
 }
@@ -106,18 +106,17 @@ case $BAYS in
 		setBAYtemp $i_
 		setBAYtemp $j
 		printf "| %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" #displays drives in a snake pattern 
-		#printf "| %-7s | %-7s | %-7s |\n" ${BAY[$i]} ${BAY[$j]} ${BAY[$k]}
 		let i=i+1
 		let j=j+1
 	done
 	line 24 -
-	printf "| %-5s | %-5s |\n" ROW1 ROW2
+	printf "| %-6s | %-6s |\n" ROW1 ROW2
 	line 24 =
 	;;
 45)
 	#45Unit
 
-	line 24 _
+	line 27 _
 	while [ $i -lt $WIDTH ];do
 		k_=$(expr $WIDTH + $WIDTH + $WIDTH_ - $i ) #invert counter for 3rd row
 		i_=$(expr $WIDTH_ - $i ) # invert counter for first row
@@ -125,19 +124,18 @@ case $BAYS in
 		setBAYtemp $j
 		setBAYtemp $k_
 		printf "| %s | %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k_]}"	
-		#printf "| %-7s | %-7s | %-7s |\n" ${BAY[$i]} ${BAY[$j]} ${BAY[$k]}
 		let i=i+1
 		let j=j+1
 		let k=k+1
 	done
-	line 24 -
-	printf "| %-5s | %-5s | %-5s |\n" ROW1 ROW2 ROW3
-	line 24 =
+	line 27 -
+	printf "| %-6s | %-6s | %-6s |\n" ROW1 ROW2 ROW3
+	line 27 =
 	;;
 60)
 	#60unit
 
-	line 32 _
+	line 36 _
 	while [ $i -lt $WIDTH ];do
 		k_=$(expr $WIDTH + $WIDTH + $WIDTH_ - $i )
 		i_=$(expr $WIDTH_ - $i )
@@ -146,15 +144,14 @@ case $BAYS in
 		setBAYtemp $k_
 		setBAYtemp $l
 		printf "| %s | %s | %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k_]}" "${BAYSTATUS[$l]}"	
-		#printf "| %-7s | %-7s | %-7s |\n" ${BAY[$i]} ${BAY[$j]} ${BAY[$k]}
 		let i=i+1
 		let j=j+1
 		let k=k+1
 		let l=l+1
 	done
-	line 32 -
-	printf "| %-5s | %-5s | %-5s | %-5s |\n" ROW1 ROW2 ROW3 ROW4
-	line 32 =
+	line 36 -
+	printf "| %-6s | %-6s | %-6s | %-6s |\n" ROW1 ROW2 ROW3 ROW4
+	line 36 =
 	echo	
 	;;
 *)
