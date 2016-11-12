@@ -94,7 +94,7 @@ case $chassis in
 				elif [ $port -eq 4 ];then
 					slot=$(expr $i + 12)
 				fi
-				echo "alias 1-$slot     /dev/disk/by-path/pci-0000:$card1-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.temp
+				echo "alias 1-$slot     /dev/disk/by-path/pci-0000:$card1-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.tmp
 				let i=i+1
 			done
 			let port=port+1
@@ -115,12 +115,14 @@ case $chassis in
 				elif [ $port -eq 4 ];then
 					slot=$(expr $i + 12)
 				fi
-				echo "alias 2-$slot     /dev/disk/by-path/pci-0000:$card2-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.temp
+				echo "alias 2-$slot     /dev/disk/by-path/pci-0000:$card2-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.tmp
 				let i=i+1
 			done
 			let port=port+1
 		done
-		echo "$(head -n -2 /etc/zfs/vdev_id.temp" > /etc/zfs/vdev_id.conf		
+		#cut the last two slots out for comabiailty with mapping scripts.
+		echo "$(head -n -2 /etc/zfs/vdev_id.temp)" >> /etc/zfs/vdev_id.conf
+		rm -f /etc/zfs/vdev_id.tmp		
 		;;
 	esac
 	;;
@@ -193,7 +195,7 @@ case $chassis in
 				elif [ $port -eq 4 ];then
 					slot=$(expr $i + 12)
 				fi
-				echo "alias 1-$slot     /dev/disk/by-path/pci-0000:$card1-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.conf
+				echo "alias 1-$slot     /dev/disk/by-path/pci-0000:$card1-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.tmp
 				let i=i+1
 			done
 			let port=port+1
@@ -213,7 +215,7 @@ case $chassis in
 				elif [ $port -eq 4 ];then
 					slot=$(expr $i + 12)
 				fi
-				echo "alias 2-$slot     /dev/disk/by-path/pci-0000:$card2-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.conf
+				echo "alias 2-$slot     /dev/disk/by-path/pci-0000:$card2-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.tmp
 				let i=i+1
 			done
 			let port=port+1
@@ -233,12 +235,14 @@ case $chassis in
 				elif [ $port -eq 4 ];then
 					slot=$(expr $i + 12)
 				fi
-				echo "alias 2-$slot     /dev/disk/by-path/pci-0000:$card2-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.conf
+				echo "alias 3-$slot     /dev/disk/by-path/pci-0000:$card3-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.tmp
 				let i=i+1
 			done
 			let port=port+1
 		done
 		;;
+		echo "$(head -n -3 /etc/zfs/vdev_id.temp)" >> /etc/zfs/vdev_id.conf
+		rm -f /etc/zfs/vdev_id.tmp
 	esac	
 	;;
 60)

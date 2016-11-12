@@ -29,7 +29,7 @@ line() { # takes a number as first input Length, and any character as second inp
 
 setBAYtemp() {
 	
-	temp=$(hddtemp /dev/disk/by-vdev/${BAY[$1]} | awk '{print $4}')
+	temp=$((hddtemp /dev/disk/by-vdev/${BAY[$1]} | awk '{print $4}')2>/dev/null)
 	tempstatus=$(echo $temp | tr -dc '[:alnum:]\n\r' | cut -f1 -d"C")
 	if [ -z $temp ];then
 		printf -v notemp "$GREY%-7s$NC" "notemp"
