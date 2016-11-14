@@ -1,0 +1,67 @@
+#! /bin/bash
+usage() {
+        cat << EOF
+Usage: 
+	./run_test [-h]
+	./run_test
+	./run_test [-t Monitor Drive Temp
+
+  -s    specify CHASSIS of chassis (i.e 30, 45, 60)
+  -r    specify RAID level (i.e. raidz1, raidz2, raidz3, mirror)
+  -l	specify vdev layout (i.e max storage eff, max IO perf)
+  -c	custom vdev layout flag
+  -t 	tune dataset flag. If present will apply default tunes to zpool and all children datasets.
+  -h    show this summary
+EOF
+        exit 0
+}
+
+pause(){ # Waits for user input to continue
+read -p "Press Enter to continue" con
+case $con in
+*)
+	;;
+esac
+}
+
+while getopts 's:r:l:cth' OPTION; do
+	case ${OPTION} in
+	s)
+		CHASSIS=${OPTARG}
+		;;
+	r)
+		RAID_LEVEL=${OPTARG}
+		;;
+	l)
+		LAYOUT=${OPTARG}
+		;;
+	c)
+		CUSTOM_LAYOUT=yes
+		;;
+	t)
+		TUNE_POOL=yes
+		;;
+	h)
+		usage
+		;;
+	esac
+done
+
+
+sh /setup/dmap.sh
+mate-terminal --geometry=36x25 -e "watch --color sh /setup/lsdev.sh"
+
+CHASSIS=$((cat /etc/zfs/vdev_id.conf| awk "NR>2" | wc -l) 2>/dev/null)
+echo
+./zpool -s $CHASSIS -r raidz1 -l IO -t
+
+mate-terminal --geometry=50x20 -e "watch -n 1 ls -lh /zpool/"
+sh /root/Desktop/pod-test/datatest.sh
+
+echo -e "\nAll Done\nCleaning Up....."
+zpool destroy zpool
+sh /setup/wipe.sh
+
+
+
+
