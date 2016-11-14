@@ -1,4 +1,24 @@
 #! /bin/bash
+
+# Usage:
+	# ./run_test [-a] [-tvzh] 
+	# ./run_test [-c hba] [-s bays] [-r raid level] [-l layout] [-b blocksize] [-n block count]
+
+# Options:	
+	# -a	Run in auto mode. Without -c & -s specifed user input required
+	# -b	Specify blocksize for datatest
+	# -c	Disk controller
+		# - Supported Controllers:
+			# - LSI 9201 (i.e LSI,lsi,l)
+			# - HighPoint R750 (i.e R750,r750,r)
+	# -l	Specify VDEV layout
+	# -n	Specify block count for datatest. Total file size = BLOCKSIZE * COUNT
+	# -r	Specify RAID level
+	# -s	Specify number of physical bays
+	# -t	Monitor drive temperatures during test
+	# -z 	Disable ZFS tunes
+	# -h	Show this summary 
+	
 usage() {
         cat << EOF
 Usage:
@@ -22,8 +42,7 @@ Usage:
 EOF
         exit 0
 }
-
-alias(){ # Configures physical drive bay alias
+map(){ # Configures physical drive bay map
 # the first input argument is the DISK_CONTROLLER
 # The second input argument is the CHASSIS size
 # calling alias with no input will prompt for user input.
@@ -46,12 +65,12 @@ datatest(){ #Launch Datatest. Writes & then Reads 5x 500GB File @ 1MB blocksize
 	mate-terminal --geometry=50x10 -e "watch -n 1 ls -lh /zpool/"
 	sh /root/Desktop/pod-test/datatest.sh $1 $2
 }
-cleanup(){ 
+cleanup(){ #Destroy pool and wipe drives
 	echo -e "\nAll Done\nCleaning Up....."
 	zpool destroy zpool
 	sh /setup/wipe.sh
 }
-check(){
+check(){ # Verify inputs
 	if [ "$CHASSIS" -eq 30 ] || [ "$CHASSIS" -eq 45 ] || [ "$CHASSIS" -eq 60 ];then
 		:
 	else
@@ -59,7 +78,6 @@ check(){
 		exit 0
 	fi
 }
-
 pause(){ # Waits for user input to continue
 read -p "Press Enter to continue" con
 case $con in
@@ -125,7 +143,7 @@ if [ $AUTO_MODE == yes ];then
 		read -p "Enter Number of physical bays: " CHASSIS
 	fi
 	check $CHASSIS
-	alias $DISK_CONTROLLER $CHASSIS
+	map $DISK_CONTROLLER $CHASSIS
 	temperature
 	if [ -z $TUNE ];then
 		./zpool -s $CHASSIS -r $RAID_LEVEL -l $VDEV_LAYOUT
@@ -136,5 +154,3 @@ if [ $AUTO_MODE == yes ];then
 	datatest $BLOCK_SIZE $COUNT
 	cleanup
 fi
-
-
