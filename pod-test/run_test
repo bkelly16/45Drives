@@ -95,6 +95,7 @@ TEMP_MODE=no
 BLOCK_SIZE=1M
 COUNT=10000
 TUNE=yes
+VDEV_MODE=no
 
 while getopts 'ab:c:l:n:r:s:tvzh' OPTION; do
 	case ${OPTION} in
