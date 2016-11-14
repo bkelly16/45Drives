@@ -121,7 +121,7 @@ case $chassis in
 			let port=port+1
 		done
 		#cut the last two slots out for comabiailty with mapping scripts.
-		echo "$(head -n -2 /etc/zfs/vdev_id.temp)" >> /etc/zfs/vdev_id.conf
+		echo "$(head -n -2 /etc/zfs/vdev_id.tmp)" >> /etc/zfs/vdev_id.conf
 		rm -f /etc/zfs/vdev_id.tmp		
 		;;
 	esac
@@ -240,9 +240,9 @@ case $chassis in
 			done
 			let port=port+1
 		done
-		;;
-		echo "$(head -n -3 /etc/zfs/vdev_id.temp)" >> /etc/zfs/vdev_id.conf
+		echo "$(head -n -3 /etc/zfs/vdev_id.tmp)" >> /etc/zfs/vdev_id.conf
 		rm -f /etc/zfs/vdev_id.tmp
+		;;
 	esac	
 	;;
 60)
