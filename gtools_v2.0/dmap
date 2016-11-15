@@ -69,9 +69,9 @@ if [ $DISK_CONTROLLER == $R750 ];then
 	sh /setup/map_r750 $CHASSIS $DISK_CONTROLLER
 elif [ $DISK_CONTROLLER == "$LSI_9201" ];then
 	sh /setup/map_lsi $CHASSIS $DISK_CONTROLLER
-elif [ $DISK_CONTROLLER == $ADAPTEC ];then
+elif [ $DISK_CONTROLLER == "$ADAPTEC" ];then
 	sh /setup/map_adptc1000 $CHASSIS $DISK_CONTROLLER
-elif [ $DISK_CONTROLLER == $RR3740 ];then
+elif [ $DISK_CONTROLLER == "$RR3740" ];then
 	sh /setup/map_rr3740 $CHASSIS $DISK_CONTROLLER
 fi
 
