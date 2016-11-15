@@ -3,8 +3,8 @@
 usage() {
         cat << EOF
 Usage:
-	./run_test [-a] [-mtvzh] 
-	./run_test [-c hba] [-s bays] [-r raid level] [-l layout] [-b blocksize] [-n block count]
+	./config [-a] [-mtvzh] 
+	./config [-c hba] [-s bays] [-r raid level] [-l layout] [-b blocksize] [-n block count]
 
 	-a	Run in auto mode. Without -c & -s specifed user input required
 	-b	Specify blocksize for datatest
@@ -74,7 +74,7 @@ case $con in
 esac
 }
 
-AUTO_MODE=yes
+AUTO_MODE=no
 DISK_CONTROLLER=
 VDEV_LAYOUT=IO
 RAID_LEVEL=raidz1
@@ -135,7 +135,6 @@ if [ $MAP_MODE == yes ];then
 	exit 0
 fi
 if [ $AUTO_MODE == yes ];then
-
 	map $DISK_CONTROLLER $CHASSIS
 	temperature
 	if [ -z $TUNE ];then
