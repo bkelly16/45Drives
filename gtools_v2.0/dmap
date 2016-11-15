@@ -1,0 +1,77 @@
+#!/bin/bash
+
+usage() {
+        cat << EOF
+Usage:	./dmap	[ -c hba controller ] [ -s chassis size ]
+
+EOF
+        exit 0
+}
+
+R750="0750"
+LSI_9201="2116"
+ADPATEC="Adaptec"
+RR3640="3740"
+
+gethba() {
+	case $1 in
+	R750|r750|r)
+		DISK_CONTROLLER=$R750
+		;;
+	LSI|lsi|l)
+		DISK_CONTROLLER=$LSI_9201
+		;;
+	Adaptec|adaptec|a) 
+		DISK_CONTROLLER=$ADAPTEC
+		;;
+	3740|h)
+		DISK_CONTROLLER=$RR3640
+		;;
+	*)
+		echo "Unsupported controller, try configurating manually"
+		exit 0
+		;;	
+	esac
+}
+checkchassis(){
+	if [ $1 -eq 30 ] || [ $1 -eq 45 ] || [ $1 -eq 60 ];then
+		:
+	else
+		echo "$1 is not an available chassis size, (30,45, or 60)"
+	fi
+}
+
+DISK_CONTROLLER=
+CHASSIS=
+
+while getopts 'c:s:h' OPTION; do
+	case ${OPTION} in
+	c)
+		DISK_CONTROLLER=${OPTARG}
+		;;
+	s)
+		CHASSIS=${OPTARG}
+		;;
+	h)
+		usage
+	esac
+done
+
+if [ $# -eq 0 ]; then
+	read -p "Disk Controller? " DISK_CONTROLLER
+	read -p "Chassis Size? " CHASSIS
+fi
+
+gethba $DISK_CONTROLLER
+checkchassis $CHASSIS
+
+if [ $DISK_CONTROLLER == $R750 ];then
+	sh /setup/map_r750 $CHASSIS $DISK_CONTROLLER
+elif [ $DISK_CONTROLLER == "$LSI_9201" ];then
+	sh /setup/map_lsi $CHASSIS $DISK_CONTROLLER
+elif [ $DISK_CONTROLLER == $ADAPTEC ];then
+	sh /setup/map_adptc1000 $CHASSIS $DISK_CONTROLLER
+elif [ $DISK_CONTROLLER == $RR3740 ];then
+	sh /setup/map_rr3740 $CHASSIS $DISK_CONTROLLER
+fi
+
