@@ -1,22 +1,24 @@
 #!/bin/bash
 
+#!/bin/bash
+
 CHASSIS=$1
 DISK_CONTROLLER=$2
 
 usage(){
 	cat << EOF
-Usage: ./map_lsi CHASSIS CONTROLLER_ID 
+Usage: ./map_rr3740 CHASSIS CONTROLLER_ID 
 
 EOF
 	exit 0
-
 }
+
 read_card(){
 	CARD=$1
 	CARD_ID=$2
 	PORT=1
 	while [ $PORT -lt $(expr $PORT_COUNT + 1) ];do
-		t=$((PORT*4))
+		#t=$((PORT*4))
 		i=1
 		while [ $i -lt $(expr $DRIVE_COUNT + 1) ];do
 			if [ $PORT -eq 1 ];then
@@ -28,7 +30,7 @@ read_card(){
 			elif [ $PORT -eq 4 ];then
 				slot=$(expr $i + 12)
 			fi
-			echo "alias $CARD-$slot     /dev/disk/by-path/pci-0000:$CARD_ID-sas-phy$(expr $t - $i)-lun-0" >> /etc/zfs/vdev_id.tmp
+			echo "alias $CARD-$slot     /dev/disk/by-path/pci-0000:$CARD_ID-sas-phy$i-lun-0" >> /etc/zfs/vdev_id.tmp
 			let i=i+1
 		done
 		let PORT=PORT+1
@@ -43,6 +45,7 @@ if [ -e /etc/zfs/vdev_id.conf ];then
         rm -f /etc/zfs/vdev_id.conf
 fi
 
+####
 PORT_COUNT=4
 DRIVE_COUNT=4
 
