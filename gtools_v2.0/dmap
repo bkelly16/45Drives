@@ -11,7 +11,7 @@ EOF
 R750="0750"
 LSI_9201="2116"
 ADPATEC="Adaptec"
-RR3640="3740"
+RR3740="3740"
 
 gethba() {
 	case $1 in
@@ -25,7 +25,7 @@ gethba() {
 		DISK_CONTROLLER=$ADAPTEC
 		;;
 	3740|h)
-		DISK_CONTROLLER=$RR3640
+		DISK_CONTROLLER=$RR3740
 		;;
 	*)
 		echo "Unsupported controller, try configurating manually"
