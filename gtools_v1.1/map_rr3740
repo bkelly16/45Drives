@@ -1,0 +1,87 @@
+#!/bin/bash
+
+#!/bin/bash
+
+CHASSIS=$1
+DISK_CONTROLLER=$2
+
+usage(){
+	cat << EOF
+Usage: ./map_rr3740 CHASSIS CONTROLLER_ID 
+
+EOF
+	exit 0
+}
+
+read_card(){
+	CARD=$1
+	CARD_ID=$2
+	PORT=1
+	while [ $PORT -lt $(expr $PORT_COUNT + 1) ];do
+		#t=$((PORT*4))
+		i=1
+		while [ $i -lt $(expr $DRIVE_COUNT + 1) ];do
+			if [ $PORT -eq 1 ];then
+				SLOT=$i
+			elif [ $PORT -eq 2 ];then
+				SLOT=$(expr $i + 4)
+			elif [ $PORT -eq 3 ];then
+				SLOT=$(expr $i + 8)
+			elif [ $PORT -eq 4 ];then
+				SLOT=$(expr $i + 12)
+			fi
+			echo "alias $CARD-$SLOT     /dev/disk/by-path/pci-0000:$CARD_ID-scsi-0:0:$(expr $SLOT - 1 ):0" >> /etc/zfs/vdev_id.tmp
+			let i=i+1
+		done
+		let PORT=PORT+1
+	done
+}
+
+if [ $# = 0 ];then
+	usage
+fi
+
+if [ -e /etc/zfs/vdev_id.conf ];then
+        rm -f /etc/zfs/vdev_id.conf
+fi
+
+####
+PORT_COUNT=4
+DRIVE_COUNT=4
+
+echo "# by-vdev" >> /etc/zfs/vdev_id.conf
+echo "# name     fully qualified or base name of device link" >> /etc/zfs/vdev_id.conf
+case $CHASSIS in
+30)
+	CARD1=$(lspci | grep $DISK_CONTROLLER | awk 'NR==1{print $1}')
+	CARD2=$(lspci | grep $DISK_CONTROLLER | awk 'NR==2{print $1}')		
+	read_card 1 $CARD1
+	read_card 2 $CARD2
+	echo "$(head -n -2 /etc/zfs/vdev_id.tmp)" >> /etc/zfs/vdev_id.conf
+	rm -f /etc/zfs/vdev_id.tmp		
+	;;
+45)
+	CARD1=$(lspci | grep $DISK_CONTROLLER | awk 'NR==1{print $1}')
+	CARD2=$(lspci | grep $DISK_CONTROLLER | awk 'NR==2{print $1}')
+	CARD3=$(lspci | grep $DISK_CONTROLLER | awk 'NR==3{print $1}')
+	read_card 1 $CARD1
+	read_card 2 $CARD2
+	read_card 3 $CARD3	
+	echo "$(head -n -3 /etc/zfs/vdev_id.tmp)" >> /etc/zfs/vdev_id.conf
+	rm -f /etc/zfs/vdev_id.tmp
+	;;
+60)
+	CARD1=$(lspci | grep $DISK_CONTROLLER | awk 'NR==1{print $1}')
+	CARD2=$(lspci | grep $DISK_CONTROLLER | awk 'NR==2{print $1}')
+	CARD3=$(lspci | grep $DISK_CONTROLLER | awk 'NR==3{print $1}')
+	CARD4=$(lspci | grep $DISK_CONTROLLER | awk 'NR==4{print $1}')
+	read_card 1 $CARD1
+	read_card 2 $CARD2
+	read_card 3 $CARD3
+	read_card 4 $CARD4
+	echo "$(head -n -4 /etc/zfs/vdev_id.tmp)" >> /etc/zfs/vdev_id.conf
+	rm -f /etc/zfs/vdev_id.tmp
+	;;
+esac
+cat /etc/zfs/vdev_id.conf
+udevadm trigger
