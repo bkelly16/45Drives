@@ -22,15 +22,15 @@ read_card(){
 		i=1
 		while [ $i -lt $(expr $DRIVE_COUNT + 1) ];do
 			if [ $PORT -eq 1 ];then
-				slot=$i
+				SLOT=$i
 			elif [ $PORT -eq 2 ];then
-				slot=$(expr $i + 4)
+				SLOT=$(expr $i + 4)
 			elif [ $PORT -eq 3 ];then
-				slot=$(expr $i + 8)
+				SLOT=$(expr $i + 8)
 			elif [ $PORT -eq 4 ];then
-				slot=$(expr $i + 12)
+				SLOT=$(expr $i + 12)
 			fi
-			echo "alias $CARD-$slot     /dev/disk/by-path/pci-0000:$CARD_ID-sas-phy$i-lun-0" >> /etc/zfs/vdev_id.tmp
+			echo "alias $CARD-$SLOT     /dev/disk/by-path/pci-0000:$CARD_ID-scsi-0:0:$(expr $SLOT - 1 ):0" >> /etc/zfs/vdev_id.tmp
 			let i=i+1
 		done
 		let PORT=PORT+1
