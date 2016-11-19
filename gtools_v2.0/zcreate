@@ -6,7 +6,7 @@ Usage:	./zcreate
 		[-b] Build Flag. Include to build the array
 		[-c] Custom Flag. Include for manual VDEV configuration
 			- DOESNT DO ANYTHING YET
-		[-d] Specify how many drives to use
+		[-d] Specify how many drives to use. default is every drive attache to HBA controller
 		[-f] Force zpool creation
 		[-l] Specify RAID level
 			- raidz1/2/3, mirror, stripe
