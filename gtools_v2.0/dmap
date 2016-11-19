@@ -12,11 +12,6 @@ Usage:	dmap
 EOF
         exit 0
 }
-R750="0750"
-LSI_9201="2116"
-ADPATEC="Adaptec"
-RR3740="3740"
-
 gethba() {
 	case $1 in
 	R750|r750|r)
@@ -45,6 +40,11 @@ checkchassis(){
 	fi
 }
 
+
+R750="0750"
+LSI_9201="2116"
+ADPATEC="Adaptec"
+RR3740="3740"
 DISK_CONTROLLER=
 CHASSIS=
 QUIET=no
