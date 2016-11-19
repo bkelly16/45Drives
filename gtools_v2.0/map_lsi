@@ -80,5 +80,4 @@ case $CHASSIS in
 	rm -f /etc/zfs/vdev_id.tmp
 	;;
 esac
-cat /etc/zfs/vdev_id.conf
 udevadm trigger
