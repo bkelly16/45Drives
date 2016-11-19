@@ -1,12 +1,5 @@
 #!/bin/bash
 
-usage() {
-        cat << EOF
-Usage:	./dmap	[ -c hba controller ] [ -s chassis size ]
-
-EOF
-        exit 0
-}
 usage() { # Help
         cat << EOF
 Usage:	dmap
