@@ -103,7 +103,6 @@ customsort() {
 	if [ $BUILD_FLAG == no ];then
 		pause "building pool"
 		BUILD_FLAG=yes
-		FORCE_POOL="-f"
 	fi
 }
 createpool(){ # Reads z.tmp file and writes zpool creation command and saves in z.conf
