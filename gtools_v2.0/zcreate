@@ -68,7 +68,7 @@ setvdevcount() { # Starting at default VDEV_COUNT for chassis size, if DRIVE_COU
 		let VDEV_COUNT=VDEV_COUNT+1
 	done
 }
-sortdrives(){ # Sorts drives per VDEV and saves each as a newline in z.tmp
+sortdrives(){ # Sorts drives per VDEV automatically and saves each as a newline in z.tmp
 	if [ -e $DIR/z.tmp ];then
 		rm -f $DIR/z.tmp
 	fi
@@ -86,7 +86,7 @@ sortdrives(){ # Sorts drives per VDEV and saves each as a newline in z.tmp
 		let i=i+1
 	done
 }
-customsort() {
+customsort() { # Sorts drives per VDEV based on user input and saves each as a newline in z.tmp
 	if [ -e $DIR/z.tmp ];then
 		rm -f $DIR/z.tmp
 	fi
