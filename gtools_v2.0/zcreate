@@ -68,7 +68,7 @@ setvdevcount() { # Starting at default VDEV_COUNT for chassis size, if DRIVE_COU
 		let VDEV_COUNT=VDEV_COUNT+1
 	done
 }
-sortdrives(){ # Sorts drives per VDEV automatically and saves each as a newline in z.tmp
+autosort(){ # Sorts drives per VDEV automatically and saves each as a newline in z.tmp
 	if [ -e $DIR/z.tmp ];then
 		rm -f $DIR/z.tmp
 	fi
@@ -170,6 +170,7 @@ getbays
 getdrives
 if [ ! -e /etc/zfs/vdev_id.conf ];then
 	echo -e "/etc/zfs/vdev_id.conf does not exist.\nUse dmap to configure drive alias first"
+	exit 0
 fi
 # If no user input for DRIVE_COUNT then DRIVE_COUNT is eqaul to the number of elements in the DRIVES array
 if [ $DRIVE_COUNT -eq 0 ];then
@@ -193,7 +194,7 @@ fi
 if [ "$CUSTOM_FLAG" = "yes" ];then
 	customsort
 else
-	sortdrives
+	autosort
 fi
 
 createpool
