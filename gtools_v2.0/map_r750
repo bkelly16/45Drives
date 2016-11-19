@@ -56,5 +56,4 @@ case $CHASSIS in
 	done
 	;;
 esac
-cat /etc/zfs/vdev_id.conf
 udevadm trigger
