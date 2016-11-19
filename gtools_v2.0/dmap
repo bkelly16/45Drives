@@ -79,7 +79,7 @@ elif [ "$DISK_CONTROLLER" == "$RR3740" ];then
 	echo $RR3740
 	sh /setup/map_rr3740 $CHASSIS $DISK_CONTROLLER
 fi
-if [ "$QUIET" == "yes" ];then
+if [ $QUIET == "yes" ];then
 	:
 else
 	cat /etc/zfs/vdev_id.conf
