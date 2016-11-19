@@ -1,0 +1,184 @@
+#!/bin/bash
+
+usage() {
+        cat << EOF
+Usage:	./zcreate
+		[-b] Build Flag. Include to build the array
+		[-c] Custom Flag. Include for manual VDEV configuration
+			- DOESNT DO ANYTHING YET
+		[-d] Specify how many drives to use
+		[-f] Force zpool creation
+		[-l] Specify RAID level
+			- raidz1/2/3, mirror, stripe
+		[-n] Specify zpool name. Defaults to "zpool"
+		[-v] Specify number of VDEVs to use
+		[-h] Displays this message
+
+EOF
+        exit 0
+}
+pause(){ # Waits for user input to continue
+read -p "Press Enter to continue" con
+case $con in
+*)
+	;;
+esac
+}
+getbays() { 
+	i=0
+	j=3
+	BAYS=$((cat /etc/zfs/vdev_id.conf| awk "NR>2" | wc -l) 2>/dev/null)
+	while [ $i -lt $BAYS ];do
+		bay=$(cat /etc/zfs/vdev_id.conf | awk -v j=$j 'NR==j{print $2}')
+		BAY[$i]=$bay
+		let i=i+1
+		let j=j+1
+	done
+}
+getdrives() {
+	i=0
+	for DRIVE in ${BAY[*]};do
+		if [ -b /dev/disk/by-vdev/$DRIVE ];then
+			DRIVES[$i]=$DRIVE
+		fi
+		let i=i+1
+	done
+}
+setvdevcount() {
+	case $BAYS in 
+	30)
+		VDEV_COUNT=3
+		;;
+	45)
+		VDEV_COUNT=5
+		;;
+	60)
+		VDEV_COUNT=5
+		;;
+	esac
+	while :
+	do
+		if (( $DRIVE_COUNT % $VDEV_COUNT == 0));then
+			break
+		fi
+		let VDEV_COUNT=VDEV_COUNT+1
+	done
+}
+sortdrives(){
+	DRIVESpVDEV=$((DRIVE_COUNT / VDEV_COUNT))
+	i=0
+	while [ $i -lt $VDEV_COUNT ];do
+		j=0
+		i_=$(expr $i + 1)
+		j_=$((DRIVESpVDEV * i))
+		while [ $((j + j_)) -lt $((i_ * DRIVESpVDEV)) ];do
+			CARD[$j]=${DRIVES[$((j + j_))]}
+			let j=j+1
+		done
+		echo "${CARD[*]}" >> $DIR/z.tmp
+		let i=i+1
+	done
+}
+createpool(){
+	printf "zpool create %s " $ZPOOL_NAME >> $DIR/z.conf
+	i=1
+	while [ $i -lt $((VDEV_COUNT + 1)) ];do
+		printf "%s %s " $RAID_LEVEL $(cat z.tmp | awk -v i=$i 'NR==i') >> $DIR/z.conf
+		let i=i+1
+	done
+	echo "$FORCE_POOL" >> $DIR/z.conf
+}
+
+CUSTOM_FLAG=no
+BUILD_FLAG=no
+DIR=$(pwd)
+DRIVE_COUNT=0
+RAID_LEVEL=
+VDEV_COUNT=0
+ZPOOL_NAME=
+FORCE_POOL=
+QUIET=no
+
+while getopts 'bcd:fn:l:qv:h' OPTION; do
+	case ${OPTION} in
+	b)
+		BUILD_FLAG=yes
+		;;
+	c)
+		CUSTOM_FLAG=yes
+		;;
+	d)
+		DRIVE_COUNT=${OPTARG}
+		;;
+	f)
+		FORCE_POOL="-f"
+		;;
+	l)
+		RAID_LEVEL=${OPTARG}
+		;;
+	n)
+		ZPOOL_NAME=${OPTARG}
+		;;
+	q)
+		QUIET=yes
+		;;
+	v)
+		VDEV_COUNT=${OPTARG}
+		;;
+	h)
+		usage
+		;;
+	esac
+done
+
+getbays
+getdrives
+
+if [ $DRIVE_COUNT -eq 0 ];then
+	DRIVE_COUNT=${#DRIVES[@]}
+fi
+if [ -e $DIR/z.tmp ];then
+	rm -f $DIR/z.tmp
+fi
+if [ -e $DIR/z.conf ];then
+	rm -f $DIR/z.conf
+fi
+if [ $VDEV_COUNT -eq 0 ];then
+	setvdevcount
+fi
+if [ "$RAID_LEVEL" == "stripe" ];then
+	RAID_LEVEL=
+elif [ -z $RAID_LEVEL ];then
+	RAID_LEVEL=raidz2
+fi
+if [ -z $ZPOOL_NAME ];then
+	ZPOOL_NAME=zpool
+fi
+if [ "$CUSTOM_FLAG" = "yes" ];then
+	echo "Manual configuration is not hooked up yet"
+	exit 0
+fi
+
+sortdrives
+createpool
+if [ "$QUIET" == "yes" ];then
+	:
+elif [ "$QUIET" == "no" ];then
+	cat $DIR/z.conf 
+fi
+
+if [ $BUILD_FLAG == yes ];then
+	cat $DIR/z.conf | /bin/sh
+else
+	echo
+	echo "Use "-b" flag to build the above zpool"
+fi
+
+#DEBUG
+#cat $DIR/z.tmp
+#echo $DRIVE_COUNT
+#echo $RAID_LEVEL
+#echo $ZPOOL_NAME
+#echo $VDEV_COUNT
+#echo $DRIVESpVDEV
+
