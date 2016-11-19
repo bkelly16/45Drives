@@ -43,6 +43,7 @@ checkchassis(){
 
 DISK_CONTROLLER=
 CHASSIS=
+QUIET=no
 
 while getopts 'c:s:h' OPTION; do
 	case ${OPTION} in
@@ -51,6 +52,9 @@ while getopts 'c:s:h' OPTION; do
 		;;
 	s)
 		CHASSIS=${OPTARG}
+		;;
+	q)
+		QUIET=yes
 		;;
 	h)
 		usage
@@ -74,5 +78,10 @@ elif [ "$DISK_CONTROLLER" == "$ADAPTEC" ];then
 elif [ "$DISK_CONTROLLER" == "$RR3740" ];then
 	echo $RR3740
 	sh /setup/map_rr3740 $CHASSIS $DISK_CONTROLLER
+fi
+if [ $QUIET == yes ];then
+	:
+else
+	cat /etc/zfs/vdev_id.conf
 fi
 
