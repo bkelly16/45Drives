@@ -45,7 +45,7 @@ DISK_CONTROLLER=
 CHASSIS=
 QUIET=no
 
-while getopts 'c:s:h' OPTION; do
+while getopts 'c:s:qh' OPTION; do
 	case ${OPTION} in
 	c)
 		DISK_CONTROLLER=${OPTARG}
