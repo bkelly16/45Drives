@@ -1,6 +1,6 @@
 #!/bin/bash
 
-usage() {
+usage() { # Help
         cat << EOF
 Usage:	./zcreate
 		[-b] Build Flag. Include to build the array
@@ -24,7 +24,7 @@ case $con in
 	;;
 esac
 }
-getbays() { 
+getbays() { # Fills array BAYS with physical slot number, whether there is a drive present or not
 	i=0
 	j=3
 	BAYS=$((cat /etc/zfs/vdev_id.conf| awk "NR>2" | wc -l) 2>/dev/null)
@@ -35,7 +35,7 @@ getbays() {
 		let j=j+1
 	done
 }
-getdrives() {
+getdrives() { # For each DRIVE in BAY, check if it is a block device. If true add to DRIVES array
 	i=0
 	for DRIVE in ${BAY[*]};do
 		if [ -b /dev/disk/by-vdev/$DRIVE ];then
@@ -44,7 +44,7 @@ getdrives() {
 		let i=i+1
 	done
 }
-setvdevcount() {
+setvdevcount() { # Starting at default VDEV_COUNT for chassis size, if DRIVE_COUNT is indivisible by VDEV_COUNT, increment VDEV_COUNT by one and keep checking until it is.
 	case $BAYS in 
 	30)
 		VDEV_COUNT=3
@@ -64,7 +64,10 @@ setvdevcount() {
 		let VDEV_COUNT=VDEV_COUNT+1
 	done
 }
-sortdrives(){
+sortdrives(){ # Sorts drives per VDEV and saves each as a newline in z.tmp
+	if [ -e $DIR/z.tmp ];then
+		rm -f $DIR/z.tmp
+	fi
 	DRIVESpVDEV=$((DRIVE_COUNT / VDEV_COUNT))
 	i=0
 	while [ $i -lt $VDEV_COUNT ];do
@@ -79,7 +82,10 @@ sortdrives(){
 		let i=i+1
 	done
 }
-createpool(){
+createpool(){ # Reads z.tmp file and writes zpool creation command and saves in z.conf
+	if [ -e $DIR/z.conf ];then
+		rm -f $DIR/z.conf
+	fi
 	printf "zpool create %s " $ZPOOL_NAME >> $DIR/z.conf
 	i=1
 	while [ $i -lt $((VDEV_COUNT + 1)) ];do
@@ -134,26 +140,25 @@ done
 getbays
 getdrives
 
+# If no user input for DRIVE_COUNT then DRIVE_COUNT is eqaul to the number of elements in the DRIVES array
 if [ $DRIVE_COUNT -eq 0 ];then
 	DRIVE_COUNT=${#DRIVES[@]}
 fi
-if [ -e $DIR/z.tmp ];then
-	rm -f $DIR/z.tmp
-fi
-if [ -e $DIR/z.conf ];then
-	rm -f $DIR/z.conf
-fi
+# If no user input for VDEV_COUNT then choose best VDEV_COUNT for amount of drives present
 if [ $VDEV_COUNT -eq 0 ];then
 	setvdevcount
 fi
+# If no user input for RAID_LEVEL then default to "RAIDZ2". If user inputs "stripe" then set RAID_LEVEL to empty string
 if [ "$RAID_LEVEL" == "stripe" ];then
 	RAID_LEVEL=
 elif [ -z $RAID_LEVEL ];then
 	RAID_LEVEL=raidz2
 fi
+# If no user input for ZPOOL_NAME then default to "zpool"
 if [ -z $ZPOOL_NAME ];then
 	ZPOOL_NAME=zpool
 fi
+# If custom flag is set lanuch manual configuration
 if [ "$CUSTOM_FLAG" = "yes" ];then
 	echo "Manual configuration is not hooked up yet"
 	exit 0
@@ -161,12 +166,14 @@ fi
 
 sortdrives
 createpool
+
+# If quiet flag is present, complete build with no stdout. If no flag then output the zpool command saved in z.conf
 if [ "$QUIET" == "yes" ];then
 	:
 elif [ "$QUIET" == "no" ];then
 	cat $DIR/z.conf 
 fi
-
+# If build flag is present; run the zpool create command saved in z.conf
 if [ $BUILD_FLAG == yes ];then
 	cat $DIR/z.conf | /bin/sh
 else
