@@ -61,7 +61,7 @@ while getopts 'c:s:qh' OPTION; do
 	esac
 done
 
-if [ $# -eq 0 ]; then
+if [ -z $DISK_CONTROLLER ] || [ -z $CHASSIS ]; then
 	read -p "Disk Controller? " DISK_CONTROLLER
 	read -p "Chassis Size? " CHASSIS
 fi
@@ -79,7 +79,7 @@ elif [ "$DISK_CONTROLLER" == "$RR3740" ];then
 	echo $RR3740
 	sh /setup/map_rr3740 $CHASSIS $DISK_CONTROLLER
 fi
-if [ $QUIET == yes ];then
+if [ "$QUIET" == "yes" ];then
 	:
 else
 	cat /etc/zfs/vdev_id.conf
