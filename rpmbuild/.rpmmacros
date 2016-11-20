@@ -1,0 +1,3 @@
+%packager bk
+%_topdir /home/bk/rpmbuild/
+%_tmppath /home/bk/rpmbuild/tmp

@@ -1,0 +1,58 @@
+#
+
+%define _topdir /home/rpmbuild/gtools
+Name            : gtools
+Summary         : Storage Cluster CLI tools
+Version         : 2 
+Release         : 1
+Group:          : Applications/System
+License:        : GPL 
+BuildArch       : noarch
+BuildRoot       : %{_topdir}/%{name}-%{version}-root
+
+# Use "Requires" for any dependencies, for example:
+# Requires        : tomcat6
+
+# Description gives information about the rpm package. This can be expanded up to multiple lines.
+%description
+This package is the beta relaese of gtools 2.0
+Features Supported:
+- Automatic drive mapping
+- Automatic disk pool creation
+
+# Prep is used to set up the environment for building the rpm package
+# Expansion of source tar balls are done in this section
+%prep
+
+# Used to compile and to build the source
+%build
+
+# The installation.
+# We actually just put all our install files into a directory structure that
+# mimics a server directory structure here
+%install
+rm -rf $RPM_BUILD_ROOT
+install -d -m 755 $RPM_BUILD_ROOT/opt/gtools
+cp ../SOURCES/dmap $RPM_BUILD_ROOT/opt/gtools/.
+cp ../SOURCES/zcreate $RPM_BUILD_ROOT/opt/gtools/.
+cp ../SOURCES/lsdev $RPM_BUILD_ROOT/opt/gtools/.
+cp ../SOURCES/maprr3740 $RPM_BUILD_ROOT/opt/gtools/.
+cp ../SOURCES/mapr750 $RPM_BUILD_ROOT/opt/gtools/.
+cp ../SOURCES/maplsi $RPM_BUILD_ROOT/opt/gtools/.
+
+%post
+echo "Installed %{name} scripts to /opt/gtools"
+# Contains a list of the files that are part of the package
+# See useful directives such as attr here: http://www.rpm.org/max-rpm-snapshot/s1-rpm-specref-files-list-directives.html
+%files
+%defattr(755, root, root)
+/opt/gtools/zcreate
+/opt/gtools/dmap
+/opt/gtools/lsdev
+/opt/gtools/maplsi
+/opt/gtools/mapr750
+/opt/gtools/maprr3740
+# Used to store any changes between versions
+%changelog
+*
+- gtools 2.0 BETA release
