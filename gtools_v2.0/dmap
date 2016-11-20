@@ -1,18 +1,17 @@
 #!/bin/bash
 
-usage() {
+usage() { # Help
         cat << EOF
-Usage:	./dmap	[ -c hba controller ] [ -s chassis size ]
+Usage:	dmap
+		[-c] Specify Disk Controller
+		[-s] Specify chassis size
+		[-q] Quiet Mode
+		[-r] Resets drive map
+		[-h] Displays this message
 
 EOF
         exit 0
 }
-
-R750="0750"
-LSI_9201="2116"
-ADPATEC="Adaptec"
-RR3740="3740"
-
 gethba() {
 	case $1 in
 	R750|r750|r)
@@ -41,11 +40,17 @@ checkchassis(){
 	fi
 }
 
+
+R750="0750"
+LSI_9201="2116"
+ADPATEC="Adaptec"
+RR3740="3740"
 DISK_CONTROLLER=
 CHASSIS=
 QUIET=no
+RESET_MAP=no
 
-while getopts 'c:s:qh' OPTION; do
+while getopts 'c:s:qrh' OPTION; do
 	case ${OPTION} in
 	c)
 		DISK_CONTROLLER=${OPTARG}
@@ -56,11 +61,21 @@ while getopts 'c:s:qh' OPTION; do
 	q)
 		QUIET=yes
 		;;
+	r)
+		RESET_MAP=yes
+		;;
 	h)
 		usage
+		;;
 	esac
 done
 
+if [ $RESET_MAP == yes ];then
+	rm -f /etc/zfs/vdev_id.conf
+	udevadm trigger
+	echo "Drive Aliasing reset"
+	exit 0
+fi
 if [ -z $DISK_CONTROLLER ] || [ -z $CHASSIS ]; then
 	read -p "Disk Controller? " DISK_CONTROLLER
 	read -p "Chassis Size? " CHASSIS
@@ -70,14 +85,14 @@ gethba $DISK_CONTROLLER
 checkchassis $CHASSIS
 
 if [ "$DISK_CONTROLLER" == "$R750" ];then
-	sh /setup/map_r750 $CHASSIS $DISK_CONTROLLER
+	mapr750 $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$LSI_9201" ];then
-	sh /setup/map_lsi $CHASSIS $DISK_CONTROLLER
+	maplsi $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$ADAPTEC" ];then
-	sh /setup/map_adptc1000 $CHASSIS $DISK_CONTROLLER
+	mapadptc1000 $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$RR3740" ];then
 	echo $RR3740
-	sh /setup/map_rr3740 $CHASSIS $DISK_CONTROLLER
+	maprr3740 $CHASSIS $DISK_CONTROLLER
 fi
 if [ $QUIET == "yes" ];then
 	:
