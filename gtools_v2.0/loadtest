@@ -30,21 +30,21 @@ map(){ # Configures physical drive bay map
 # The second input argument is the CHASSIS size
 # calling alias with no input will prompt for user input.
 	sudo dmap -c $1 -s $2
-		mate-terminal --geometry=36x25 -e "watch -n 1 --color lsdev"
+		mate-terminal --geometry=36x25 -e "watch -n 1 --color lsdev" 2>/dev/null
 	echo
 }
 temperature(){ # Lauch Drive Temperature Monitor
 	if [ $TEMP_MODE == yes ];then
-		mate-terminal --geometry=36x25 -e "watch -n 60 --color lstemp"
+		mate-terminal --geometry=36x25 -e "watch -n 60 --color lstemp" 2>/dev/null
 	fi
 }
 vdev(){ # Launch VDEV map
 	if [ $VDEV_MODE == yes ];then
-		mate-terminal --geometry=36x25 -e "watch -n 1 --color lsvdev"
+		mate-terminal --geometry=36x25 -e "watch -n 1 --color lsvdev" 2>/dev/null
 	fi
 }
 datatest(){ #Launch Datatest. Writes & then Reads 5x 500GB File @ 1MB blocksize
-	mate-terminal --geometry=50x10 -e "watch -n 1 ls -lh /zpool/"
+	mate-terminal --geometry=50x10 -e "watch -n 1 ls -lh /zpool/" 2>/dev/null
 	CHECK=$(df | grep zpool | awk '{print $1}')
 	if [ ! -z $CHECK ];then
 		for i in 1 2 3 4 5 6; do

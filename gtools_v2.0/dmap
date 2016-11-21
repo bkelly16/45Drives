@@ -52,7 +52,7 @@ QUIET=no
 RESET_MAP=no
 UDEV_TRIG=yes
 
-while getopts 'c:s:qrh' OPTION; do
+while getopts 'c:ms:qrh' OPTION; do
 	case ${OPTION} in
 	c)
 		DISK_CONTROLLER=${OPTARG}
