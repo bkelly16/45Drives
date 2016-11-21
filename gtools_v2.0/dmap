@@ -4,6 +4,7 @@ usage() { # Help
         cat << EOF
 Usage:	dmap
 		[-c] Specify Disk Controller
+		[-m] Creates map but doesnt trigger udev rules
 		[-s] Specify chassis size
 		[-q] Quiet Mode
 		[-r] Resets drive map
@@ -49,6 +50,7 @@ DISK_CONTROLLER=
 CHASSIS=
 QUIET=no
 RESET_MAP=no
+UDEV_TRIG=yes
 
 while getopts 'c:s:qrh' OPTION; do
 	case ${OPTION} in
@@ -57,6 +59,9 @@ while getopts 'c:s:qrh' OPTION; do
 		;;
 	s)
 		CHASSIS=${OPTARG}
+		;;
+	m)
+		UDEV_TRIG=no
 		;;
 	q)
 		QUIET=yes
@@ -73,6 +78,7 @@ done
 if [ $RESET_MAP == yes ];then
 	rm -f /etc/zfs/vdev_id.conf
 	udevadm trigger
+	udevadm settle
 	echo "Drive Aliasing reset"
 	exit 0
 fi
@@ -89,11 +95,16 @@ if [ "$DISK_CONTROLLER" == "$R750" ];then
 elif [ "$DISK_CONTROLLER" == "$LSI_9201" ];then
 	maplsi $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$ADAPTEC" ];then
-	mapadptc1000 $CHASSIS $DISK_CONTROLLER
+	mapASR81605Z $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$RR3740" ];then
-	echo $RR3740
 	maprr3740 $CHASSIS $DISK_CONTROLLER
 fi
+
+if [ $UDEV_TRIG == "yes" ];then
+	udevadm trigger
+	udevadm settle
+fi
+
 if [ $QUIET == "yes" ];then
 	:
 else

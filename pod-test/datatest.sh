@@ -1,5 +1,7 @@
 #!/bin/bash
 
+
+
 CHECK=$(df | grep zpool | awk '{print $1}')
 if [ ! -z $CHECK ];then
 	for i in 1 2 3 4 5 6; do

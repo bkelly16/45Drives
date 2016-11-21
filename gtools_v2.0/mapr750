@@ -56,4 +56,3 @@ case $CHASSIS in
 	done
 	;;
 esac
-udevadm trigger
