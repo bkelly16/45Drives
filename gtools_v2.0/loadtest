@@ -29,32 +29,32 @@ map(){ # Configures physical drive bay map
 # the first input argument is the DISK_CONTROLLER
 # The second input argument is the CHASSIS size
 # calling alias with no input will prompt for user input.
-	dmap -c $1 -s $2
-		sudo mate-terminal --geometry=36x25 -e "watch -n 1 --color lsdev"
+	sudo dmap -c $1 -s $2
+		mate-terminal --geometry=36x25 -e "watch -n 1 --color lsdev"
 	echo
 }
 temperature(){ # Lauch Drive Temperature Monitor
 	if [ $TEMP_MODE == yes ];then
-		sudo mate-terminal --geometry=36x25 -e "watch -n 60 --color lstemp"
+		mate-terminal --geometry=36x25 -e "watch -n 60 --color lstemp"
 	fi
 }
 vdev(){ # Launch VDEV map
 	if [ $VDEV_MODE == yes ];then
-		sudo mate-terminal --geometry=36x25 -e "watch -n 1 --color lsvdev"
+		mate-terminal --geometry=36x25 -e "watch -n 1 --color lsvdev"
 	fi
 }
 datatest(){ #Launch Datatest. Writes & then Reads 5x 500GB File @ 1MB blocksize
-	sudo mate-terminal --geometry=50x10 -e "watch -n 1 ls -lh /zpool/"
+	mate-terminal --geometry=50x10 -e "watch -n 1 ls -lh /zpool/"
 	CHECK=$(df | grep zpool | awk '{print $1}')
 	if [ ! -z $CHECK ];then
 		for i in 1 2 3 4 5 6; do
 			echo "Writing Test File $i"
-			dd if=/dev/zero of=/zpool/test$i bs=$1 count=$2 2>&1 | awk 'NR==3'
+			 sudo dd if=/dev/zero of=/zpool/test$i bs=$1 count=$2 2>&1 | awk 'NR==3'
 		done
 		echo
 		for i in 1 2 3 4 5 6; do
 			echo "Reading Test File $i"
-			dd if=/zpool/test$i of=/dev/null bs=$1 2>&1 | awk 'NR==3'
+			sudo dd if=/zpool/test$i of=/dev/null bs=$1 2>&1 | awk 'NR==3'
 		done
 	else
 		echo "Pool Not Mounted"
@@ -63,24 +63,24 @@ datatest(){ #Launch Datatest. Writes & then Reads 5x 500GB File @ 1MB blocksize
 }
 tunepool(){ #atime=off;xattr=sa;async=0;exec=yes;compression=lz4
 	if [ ! -z $TUNE ];then
-		zfs set atime=off zpool
-		zfs set xattr=sa zpool
-		zfs set exec=off zpool
-		zfs set sync=disabled zpool
-		zfs set compression=lz4 zpool
+		sudo zfs set atime=off zpool
+		sudo zfs set xattr=sa zpool
+		sudo zfs set exec=off zpool
+		sudo zfs set sync=disabled zpool
+		sudo zfs set compression=lz4 zpool
 		echo -e "Applied the Following Tunables on $name:\n"
-		zfs get atime zpool | awk 'NR==2'
-		zfs get xattr zpool | awk 'NR==2'
-		zfs get exec zpool | awk 'NR==2'
-		zfs get sync zpool | awk 'NR==2'
-		zfs get compression zpool | awk 'NR==2'	
+		sudo zfs get atime zpool | awk 'NR==2'
+		sudo zfs get xattr zpool | awk 'NR==2'
+		sudo zfs get exec zpool | awk 'NR==2'
+		sudo zfs get sync zpool | awk 'NR==2'
+		sudo zfs get compression zpool | awk 'NR==2'	
 		echo
 	fi
 }
 cleanup(){ #Destroy pool and wipe drives
 	echo -e "\nAll Done\nCleaning Up....."
-	zpool destroy zpool
-	sh /setup/wipe.sh
+	sudo zpool destroy zpool
+	sudo wipedev
 }
 check(){ # Verify inputs
 	if [ "$CHASSIS" -eq 30 ] || [ "$CHASSIS" -eq 45 ] || [ "$CHASSIS" -eq 60 ];then
@@ -101,7 +101,6 @@ esac
 
 AUTO_MODE=yes
 DISK_CONTROLLER=
-VDEV_LAYOUT=IO
 RAID_LEVEL=raidz1
 CHASSIS=
 TEMP_MODE=no
@@ -163,7 +162,8 @@ if [ $AUTO_MODE == yes ];then
 	check $CHASSIS
 	map $DISK_CONTROLLER $CHASSIS
 	temperature
-	zcreate -b -l $RAID_LEVEL $CUSTOM
+	sudo zcreate -b -l $RAID_LEVEL $CUSTOM
+	tunepool
 	vdev
 	datatest $BLOCK_SIZE $COUNT
 	cleanup
