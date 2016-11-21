@@ -28,7 +28,7 @@ line() { # takes a number as first input Length, and any character as second inp
 
 setBAYstatus() {
 	
-	MODEL=$((hdparm -I /dev/disk/by-vdev/${BAY[$1]} | grep -i model | awk -F: '{print $2}' |sed -e 's/^[[:space:]]*//') 2>/dev/null)
+	MODEL=$((hdparm -I /dev/disk/by-vdev/${BAY[$1]} | grep -i model | awk -F: '{print $2}' | tr -d '[:space:]') 2>/dev/null)
 	if [ -z $MODEL ];then
 		printf -v absent "$DGREY%-18s$NC" "N/A"  
 		#absent=$(echo -e "${DGREY}${BAY[$1]}${NC}")
