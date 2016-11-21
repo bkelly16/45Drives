@@ -1,6 +1,6 @@
 Name: gtools
 Version: 2.0
-Release: 5
+Release: 6
 Summary: Clustering cli tools
 Source0: gtools-2.0.tar.gz
 License: GPL
@@ -93,3 +93,6 @@ echo "All done"
 
 * Sun Nov 20 2016 BK
 - Release 5 Included added lstemp, lsvdev
+
+* Sun Nov 20 2016 BK
+- Release 6 Updates
