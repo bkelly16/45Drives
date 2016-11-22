@@ -91,13 +91,13 @@ gethba $DISK_CONTROLLER
 checkchassis $CHASSIS
 
 if [ "$DISK_CONTROLLER" == "$R750" ];then
-	mapr750 $CHASSIS $DISK_CONTROLLER
+	/opt/gtools/bin/mapr750 $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$LSI_9201" ];then
-	maplsi $CHASSIS $DISK_CONTROLLER
+	/opt/gtools/bin/maplsi $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$ADAPTEC" ];then
-	mapASR81605Z $CHASSIS $DISK_CONTROLLER
+	/opt/gtools/bin/mapASR81605Z $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$RR3740" ];then
-	maprr3740 $CHASSIS $DISK_CONTROLLER
+	/opt/gtools/bin/maprr3740 $CHASSIS $DISK_CONTROLLER
 fi
 
 if [ $UDEV_TRIG == "yes" ];then

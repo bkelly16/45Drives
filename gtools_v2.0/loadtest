@@ -34,17 +34,17 @@ map(){ # Configures physical drive bay map
 	else
 		sudo dmap -c $1 -s $2
 	fi	
-	mate-terminal --geometry=36x25 -e "watch -n 1 --color lsdev" 2>/dev/null
+	mate-terminal --geometry=36x25 -e "watch -n 1 --color /opt/gtools/bin/lsdev" 2>/dev/null
 	echo
 }
 temperature(){ # Lauch Drive Temperature Monitor
 	if [ $TEMP_MODE == yes ];then
-		mate-terminal --geometry=36x25 -e "watch -n 60 --color lstemp" 2>/dev/null
+		mate-terminal --geometry=36x25 -e "watch -n 60 --color /opt/gtools/bin/lstemp" 2>/dev/null
 	fi
 }
 vdev(){ # Launch VDEV map
 	if [ $VDEV_MODE == yes ];then
-		mate-terminal --geometry=36x25 -e "watch -n 1 --color lsvdev" 2>/dev/null
+		mate-terminal --geometry=36x25 -e "watch -n 1 --color /opt/gtools/bin/lsvdev" 2>/dev/null
 	fi
 }
 datatest(){ #Launch Datatest. Writes & then Reads 5x 500GB File @ 1MB blocksize
