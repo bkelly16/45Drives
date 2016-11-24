@@ -1,6 +1,6 @@
 Name: gtools
 Version: 2.0
-Release: 7
+Release: 8
 Summary: Clustering cli tools
 Source0: gtools-2.0.tar.gz
 License: GPL
@@ -34,7 +34,7 @@ install -m 0755 zcreate $RPM_BUILD_ROOT/opt/gtools/bin/zcreate
 install -m 0775 -d ${RPM_BUILD_ROOT}%{_bindir}
 ln -sf /opt/gtools/bin/dmap ${RPM_BUILD_ROOT}%{_bindir}
 ln -sf /opt/gtools/bin/loadtest ${RPM_BUILD_ROOT}%{_bindir}
-#ln -sf /opt/gtools/bin/lsdev ${RPM_BUILD_ROOT}%{_bindir}
+ln -sf /opt/gtools/bin/lsdev ${RPM_BUILD_ROOT}%{_bindir}
 #ln -sf /opt/gtools/bin/lsmodel ${RPM_BUILD_ROOT}%{_bindir}
 #ln -sf /opt/gtools/bin/lstemp ${RPM_BUILD_ROOT}%{_bindir}
 #ln -sf /opt/gtools/bin/lsvdev ${RPM_BUILD_ROOT}%{_bindir}
@@ -68,7 +68,7 @@ echo "All done"
 
 %{_bindir}/dmap
 %{_bindir}/loadtest
-#%{_bindir}/lsdev
+%{_bindir}/lsdev
 #%{_bindir}/lstemp
 #%{_bindir}/lsvdev
 #%{_bindir}/mapASR81605Z
@@ -79,6 +79,9 @@ echo "All done"
 %{_bindir}/zcreate
 
 %changelog
+* Thu Nov 23 2016 BK
+- Release 8 Re-added link lsdev to bin dir
+
 * Tue Nov 22 2016 BK
 - Release 7 Removed /usr/bin link for map* and ls* scripts
 - Learned changelog of .spec needs to go in chron order

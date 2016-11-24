@@ -65,6 +65,7 @@ case $CHASSIS in
 	read_card 2 $CARD2
 	read_card 3 $CARD3	
 	echo "$(head -n -3 /etc/zfs/vdev_id.tmp)" >> /etc/zfs/vdev_id.conf
+	sed -i '47s/phy15/phy12/g' /etc/zfs/vdev_id.conf
 	rm -f /etc/zfs/vdev_id.tmp
 	;;
 60)
