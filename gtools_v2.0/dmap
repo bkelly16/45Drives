@@ -41,8 +41,9 @@ checkchassis(){
 	fi
 }
 checkroot(){
+	SCRIPT_NAME=$(basename "$0")
 	if [ "$EUID" -ne 0 ];then
-		echo "Please run as root"
+		echo "Please run $SCRIPT_NAME as root"
 		exit 0
 	fi
 }

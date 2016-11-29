@@ -90,13 +90,19 @@ check(){ # Verify inputs
 		exit 0
 	fi
 }
-
 pause(){ # Waits for user input to continue
 read -p "Press Enter to continue" con
 case $con in
 *)
 	;;
 esac
+}
+checkroot(){
+	SCRIPT_NAME=$(basename "$0")
+	if [ "$EUID" -ne 0 ];then
+		echo "Please run $SCRIPT_NAME as root"
+		exit 0
+	fi
 }
 
 AUTO_MODE=yes
@@ -153,6 +159,8 @@ done
 if [ $# = 0 ];then
 	usage
 fi
+
+checkroot
 
 if [ $AUTO_MODE == yes ];then
 	if [ -z $DISK_CONTROLLER ] || [ -z $CHASSIS ];then

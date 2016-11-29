@@ -24,8 +24,13 @@ line() { # takes a number as first input Length, and any character as second inp
 		echo ${line// /$2}
 	fi		
 }
-
-
+checkroot(){
+	SCRIPT_NAME=$(basename "$0")
+	if [ "$EUID" -ne 0 ];then
+		echo "Please run $SCRIPT_NAME as root"
+		exit 0
+	fi
+}
 setBAYstatus() {
 	
 	MODEL=$((hdparm -I /dev/disk/by-vdev/${BAY[$1]} | grep -i model | awk -F: '{print $2}' | tr -d '[:space:]') 2>/dev/null)
@@ -44,14 +49,13 @@ BAYS=$((cat /etc/zfs/vdev_id.conf| awk "NR>2" | wc -l) 2>/dev/null)
 #BAYS=$(expr $BAYS_  ) #Exclude comments at top of config file
 
 #Check which controller present are in the system
+checkroot
 
 check=0
 if [ -e /proc/scsi/r750/10 ] || [ -e /proc/scsi/r750/11 ];then
 	check=1
 fi
-#scsi=$(cat /etc/zfs/vdev_id.conf 2>/dev/null | grep scsi | awk 'NR=1{print$1}')
-#card=$?
-#Controller Info
+
 lsitag="Disk Controller: LSI9201-24e"
 r750tag="Disk Controller: HighPointR750"
 lsidriver=$(modinfo mpt2sas | grep version | awk 'NR==1{print $2}')

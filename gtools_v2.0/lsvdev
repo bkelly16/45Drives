@@ -80,8 +80,15 @@ getvdevmember() {
 	done		
 
 }
+checkroot(){
+	SCRIPT_NAME=$(basename "$0")
+	if [ "$EUID" -ne 0 ];then
+		echo "Please run $SCRIPT_NAME as root"
+		exit 0
+	fi
+}
 
-
+checkroot
 ##MAIN
 # Get a list of vdev and each drive in it
 # Get SIZE for loop purposes

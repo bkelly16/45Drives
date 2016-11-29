@@ -120,6 +120,13 @@ createpool(){ # Reads z.tmp file and writes zpool creation command and saves in 
 	done
 	echo >> $DIR/z.conf
 }
+checkroot(){
+	SCRIPT_NAME=$(basename "$0")
+	if [ "$EUID" -ne 0 ];then
+		echo "Please run $SCRIPT_NAME as root"
+		exit 0
+	fi
+}
 
 DEBUG_FLAG=no
 CUSTOM_FLAG=no
@@ -166,6 +173,7 @@ while getopts 'bcd:m:n:l:qv:zh' OPTION; do
 	esac
 done
 
+checkroot
 getbays
 getdrives
 if [ ! -e /etc/zfs/vdev_id.conf ];then

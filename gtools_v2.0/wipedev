@@ -1,5 +1,13 @@
 #!/bin/bash
+checkroot(){
+	SCRIPT_NAME=$(basename "$0")
+	if [ "$EUID" -ne 0 ];then
+		echo "Please run $SCRIPT_NAME as root"
+		exit 0
+	fi
+}
 
+checkroot
 BAYS=$((cat /etc/zfs/vdev_id.conf| awk "NR>2" | wc -l) 2>/dev/null)
 i=0
 j=3

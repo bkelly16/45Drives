@@ -25,7 +25,13 @@ line() { # takes a number as first input Length, and any character as second inp
 		echo ${line// /$2}
 	fi		
 }
-
+checkroot(){
+	SCRIPT_NAME=$(basename "$0")
+	if [ "$EUID" -ne 0 ];then
+		echo "Please run $SCRIPT_NAME as root"
+		exit 0
+	fi
+}
 setBAYtemp() {
 	
 	temp=$((smartctl -a /dev/disk/by-vdev/${BAY[$1]} | grep -i temp | \
@@ -63,7 +69,7 @@ setBAYtemp() {
 	fi	
 }
 
-
+checkroot
 rpm -qa | grep -qw smartmontools || yum install smartmontools
 BAYS=$((cat /etc/zfs/vdev_id.conf| awk "NR>2" | wc -l) 2>/dev/null)
 
