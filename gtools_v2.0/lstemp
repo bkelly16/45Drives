@@ -35,9 +35,9 @@ checkroot(){
 setBAYtemp() {
 	
 	temp=$((smartctl -a /dev/disk/by-vdev/${BAY[$1]} | grep -i temp | \
-			awk -F- '{print $2}' | awk '{print $1}')2>/dev/null)
+			awk -F- NR==1'{print $2}' | awk '{print $1}')2>/dev/null)
 	tempverbose=$((smartctl -a /dev/disk/by-vdev/${BAY[$1]} | grep -i temp | \
-			awk -F- '{print $2}' | sed 's/ //g') 2>/dev/null)
+			awk -F- NR==1'{print $2}' | sed 's/ //g') 2>/dev/null)
 	if [ "$2" == "history" ];then					
 		if [ -z $temp ];then
 			printf -v notemp "$GREY%-7s C$NC" "notemp"
