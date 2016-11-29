@@ -40,7 +40,12 @@ checkchassis(){
 		echo "$1 is not an available chassis size, (30,45, or 60)"
 	fi
 }
-
+checkroot(){
+	if [ "$EUID" -ne 0 ];then
+		echo "Please run as root"
+		exit 0
+	fi
+}
 
 R750="0750"
 LSI_9201="2116"
@@ -74,6 +79,8 @@ while getopts 'c:ms:qrh' OPTION; do
 		;;
 	esac
 done
+
+checkroot
 
 if [ $RESET_MAP == yes ];then
 	rm -f /etc/zfs/vdev_id.conf
