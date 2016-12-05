@@ -91,7 +91,7 @@ customsort() { # Sorts drives per VDEV based on user input and saves each as a n
 	if [ -e $DIR/z.tmp ];then
 		rm -f $DIR/z.tmp
 	fi
-	sh /setup/lsdev.sh
+	lsdev
 	read -p "Number of VDEVs: " VDEV_COUNT
 	read -p "RAID Level: " RAID_LEVEL
 	read -p "Pool Name: " ZPOOL_NAME
