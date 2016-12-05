@@ -1,6 +1,6 @@
 Name: gtools
 Version: 2.0
-Release: 9
+Release: 10
 Summary: Clustering cli tools
 Source0: gtools-2.0.tar.gz
 License: GPL
@@ -79,6 +79,9 @@ echo "All done"
 %{_bindir}/zcreate
 
 %changelog
+* Thu Dec 05 2016 BK
+- Release 10 added check-root
+
 * Thu Nov 23 2016 BK
 - Release 9 Fixed mapping issue when switching machines
 
