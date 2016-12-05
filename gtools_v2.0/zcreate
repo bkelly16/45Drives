@@ -41,9 +41,10 @@ getbays() { # Fills array BAYS with physical slot number, whether there is a dri
 }
 getdrives() { # For each DRIVE in BAY, check if it is a block device. If true add to DRIVES array
 	i=0
+	DRIVES=()
 	for DRIVE in ${BAY[*]};do
 		if [ -b /dev/disk/by-vdev/$DRIVE ];then
-			DRIVES[$i]=$DRIVE
+			DRIVES+=( "$DRIVE" )
 		fi
 		let i=i+1
 	done
@@ -223,14 +224,16 @@ else
 fi
 
 if [ $DEBUG_FLAG == yes ];then
-	echo $DRIVE_COUNT
-	echo $RAID_LEVEL
-	echo $ZPOOL_NAME
-	echo $VDEV_COUNT
-	echo $DRIVESpVDEV
+	echo "drive count: $DRIVE_COUNT"
+	echo "raid level: $RAID_LEVEL"
+	echo "zpool name $ZPOOL_NAME"
+	echo "vdev count: $VDEV_COUNT"
+	echo "drives/vdev: $DRIVESpVDEV"
+	echo "DRIVESarray: ${DRIVES[*]}"
 	cat $DIR/z.conf
 	cat $DIR/z.tmp
 else
 	rm -f $DIR/z.conf
 	rm -f $DIR/z.tmp
 fi
+
