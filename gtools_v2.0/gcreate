@@ -1,0 +1,137 @@
+#!/bin/bash
+pause(){ # Waits for user input to continue
+read -p "$1" con
+case $con in
+yes)
+	;;
+*)
+	exit 0
+	;;
+esac
+}
+usage() { # Help
+
+        cat << EOF
+Usage:	zcreate
+		[-b] Specify Brick Count
+		[-N] Volume name
+		[-n] Specify nodes in trusted pool. This can be an IP or a hostname
+			- For each node you must use a sperate -n flag {gcreate -n node1 -n node2 -n node3}
+		[-r] Replica count (linked list only)
+		[-v] Volume Type
+			Options: "linkedlist", "dist"
+		[-h] Displays this message
+
+EOF
+	exit 0
+}
+pingcheck() { # if not in host file exlcude, if unresponsive exclude
+i=0
+for node in ${NODES[*]};do
+	if [ -z "$(cat /etc/hosts | grep $node)" ];then
+		echo "$node not present in /etc/hosts -- excluding"
+		EXCLUDE+=("$node")
+		let i=i+1
+	elif ping -c 1 -W 1 $node >/dev/null; then
+		:
+	else
+		echo "$node unresponsive -- excluding"
+		EXCLUDE+=("$node")
+		let i=i+1
+	fi
+done
+for del in ${EXCLUDE[*]};do
+	NODES=("${NODES[@]/$del/}")
+done
+}
+checkglusterd() {
+check=$(ssh root@$1 systemctl status glusterd | awk 'NR==3{print $2}')
+if [ "$check" != "active" ];then
+	echo -e "Starting gluster service on $node"
+	ssh root@$1 systemctl restart glusterd
+	ssh root@$1 systemctl enable glusterd
+fi
+}
+gfirewall()	{
+for node in ${NODES[*]};do
+	fwcheck=$(ssh root@$node firewall-cmd --permanent --zone=public --list-ports | grep 24007-24008| awk '{print $1}')
+	if [ -z "$fwcheck" ];then
+		echo -e "$1 ports 24007,24008 in firewall on $node\n(Gluster Daemon, Gluster Management)"
+		ssh root@$node firewall-cmd --permanent --zone=public --$1-port=24007-24008/tcp 
+	fi
+done
+}
+peerprobe()	{
+for node in ${NODES[*]}; do
+	PEER_CHECK=$(gluster peer status | grep $node)
+	if [ "$node" != "$WORKING_NODE" ] && [ -z "$PEER_CHECK" ] ; then
+		gluster peer probe $node | awk '{print $1,$2,$3}'
+	fi
+done
+}
+
+BRICK_COUNT=0
+VOLUME_NAME=tank
+NODE=""
+PEERS=()
+NODES=("$NODE" "${PEERS[*]}")
+REPLICA=1
+VOLUME_TYPE=""
+RESET=no
+WORKING_NODE=$(hostname -s)
+
+while getopts 'b:n:N:r:v:hz' OPTION; do
+	case ${OPTION} in
+	b)
+		BRICK_COUNT=${OPTARG}
+		;;
+	N)
+		VOLUME_NAME=${OPTARG}
+		;;
+	n)
+		
+		PEERS+=("$OPTARG")
+		NODES=("$NODE" "${PEERS[*]}")
+		;;
+	r)
+		REPLICA=${OPTARG}
+		;;
+	v)
+		VOLUME_TYPE=${OPTARG}
+		;;
+	z)
+		RESET=yes
+		;;
+	h)
+		usage
+		;;
+	esac
+done
+if [ "$RESET" == "yes" ];then
+	pause "Are you sure? This is destroy the gluster volume completely? (yes/no) " 
+	systemctl stop glusterd;
+	rm -rf /var/lib/glusterd/;
+	systemctl restart glusterd
+	exit 0
+fi
+# GLOBAL
+pingcheck
+gfirewall add
+
+# WORKING NODE
+checkglusterd $WORKING_NODE
+peerprobe
+
+# PEERS
+for PEER in ${PEERS[*]};do
+	checkglusterd $PEER
+	:
+done
+
+case $VOLUME_TYPE in
+	linkedlist)
+		;;
+	dist)
+		;;
+esac
+

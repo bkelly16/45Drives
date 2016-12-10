@@ -40,13 +40,11 @@ getbays() { # Fills array BAYS with physical slot number, whether there is a dri
 	done
 }
 getdrives() { # For each DRIVE in BAY, check if it is a block device. If true add to DRIVES array
-	i=0
 	DRIVES=()
 	for DRIVE in ${BAY[*]};do
 		if [ -b /dev/disk/by-vdev/$DRIVE ];then
 			DRIVES+=( "$DRIVE" )
 		fi
-		let i=i+1
 	done
 }
 setvdevcount() { # Starting at default VDEV_COUNT for chassis size, if DRIVE_COUNT is indivisible by VDEV_COUNT, increment VDEV_COUNT by one and keep checking until it is.
