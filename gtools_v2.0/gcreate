@@ -10,7 +10,6 @@ yes)
 esac
 }
 usage() { # Help
-
         cat << EOF
 Usage:	zcreate
 		[-b] Specify Brick Count
@@ -47,7 +46,7 @@ done
 checkglusterd() {
 check=$(ssh root@$1 systemctl status glusterd | awk 'NR==3{print $2}')
 if [ "$check" != "active" ];then
-	echo -e "Starting gluster service on $node"
+	echo -e "Starting gluster service on $1"
 	ssh root@$1 systemctl restart glusterd
 	ssh root@$1 systemctl enable glusterd
 fi
@@ -89,7 +88,6 @@ while getopts 'b:n:N:r:v:hz' OPTION; do
 		VOLUME_NAME=${OPTARG}
 		;;
 	n)
-		
 		PEERS+=("$OPTARG")
 		NODES=("$NODE" "${PEERS[*]}")
 		;;
@@ -114,10 +112,9 @@ if [ "$RESET" == "yes" ];then
 	systemctl restart glusterd
 	exit 0
 fi
-# GLOBAL
+
 pingcheck
 gfirewall add
-
 # WORKING NODE
 checkglusterd $WORKING_NODE
 peerprobe
@@ -125,7 +122,6 @@ peerprobe
 # PEERS
 for PEER in ${PEERS[*]};do
 	checkglusterd $PEER
-	:
 done
 
 case $VOLUME_TYPE in
