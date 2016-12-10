@@ -114,16 +114,15 @@ if [ "$RESET" == "yes" ];then
 fi
 
 pingcheck
-gfirewall add
 # WORKING NODE
+gfirewall add
 checkglusterd $WORKING_NODE
 peerprobe
-
 # PEERS
 for PEER in ${PEERS[*]};do
 	checkglusterd $PEER
 done
-
+# Create Volume
 case $VOLUME_TYPE in
 	linkedlist)
 		;;
