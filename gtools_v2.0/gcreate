@@ -14,29 +14,29 @@ usage() { # Help
 Usage:	zcreate
 		[-b] Specify Brick Count
 		[-N] Volume name
-		[-n] Specify nodes in trusted pool. This can be an IP or a hostname
-			- For each node you must use a sperate -n flag {gcreate -n node1 -n node2 -n node3}
+		[-n] Specify nodes in trusted pool
+			- For each node you must use a sperate -n flag 
+			- gcreate -n node1 -n node2 -n node3
+		[-p] Specify zpool name. Only neccesary if multiple pools in system
 		[-r] Replica count (linked list only)
 		[-v] Volume Type
 			Options: "linkedlist", "dist"
+		[-z] Reset gluster config files on each node specified
 		[-h] Displays this message
 
 EOF
 	exit 0
 }
 pingcheck() { # if not in host file exlcude, if unresponsive exclude
-i=0
 for node in ${NODES[*]};do
 	if [ -z "$(cat /etc/hosts | grep $node)" ];then
 		echo "$node not present in /etc/hosts -- excluding"
 		EXCLUDE+=("$node")
-		let i=i+1
 	elif ping -c 1 -W 1 $node >/dev/null; then
 		:
 	else
 		echo "$node unresponsive -- excluding"
 		EXCLUDE+=("$node")
-		let i=i+1
 	fi
 done
 for del in ${EXCLUDE[*]};do
@@ -64,32 +64,65 @@ peerprobe()	{
 for node in ${NODES[*]}; do
 	PEER_CHECK=$(gluster peer status | grep $node)
 	if [ "$node" != "$WORKING_NODE" ] && [ -z "$PEER_CHECK" ] ; then
-		gluster peer probe $node | awk '{print $1,$2,$3}'
+		gluster peer probe $node 
 	fi
 done
 }
+peerdetach() {
+for node in ${NODES[*]}; do
+	PEER_CHECK=$(gluster peer status | grep $node)
+	if [ "$node" != "$WORKING_NODE" ] && [ -z "$PEER_CHECK" ] ; then
+		gluster peer detach $node 
+	fi
+done
+}
+resetgfs() {
+	pause "Are you sure? This will completely reset all gluster config files ? (yes/no) " 
+	for node in ${NODES[*]};do
+		ssh root@$node systemctl stop glusterd;
+		ssh root@$node rm -rf /var/lib/glusterd/;
+		ssh root@$node systemctl restart glusterd
+	done
+}
+bcheck() {
+	if [ $(($1%2)) -eq 0 ];then
+		:
+	else
+		echo -e "Bricks must be an even number for a Replicated Volume"
+		exit 0
+	fi
+}
 
-BRICK_COUNT=0
+BRICK_COUNT=1
+BRICK_FLAG=no
 VOLUME_NAME=tank
-NODE=""
+WORKING_NODE=$(hostname -s)
 PEERS=()
-NODES=("$NODE" "${PEERS[*]}")
+NODES=("$WORKING_NODE")
 REPLICA=1
 VOLUME_TYPE=""
 RESET=no
-WORKING_NODE=$(hostname -s)
+FORCE=no
+POOL_NAME=$(zfs list | awk 'NR==2{print $1}')
 
-while getopts 'b:n:N:r:v:hz' OPTION; do
+while getopts 'b:fn:N:pr:v:hz' OPTION; do
 	case ${OPTION} in
 	b)
+		BRICK_FLAG=yes
 		BRICK_COUNT=${OPTARG}
+		;;
+	f)
+		FORCE=yes
 		;;
 	N)
 		VOLUME_NAME=${OPTARG}
 		;;
 	n)
 		PEERS+=("$OPTARG")
-		NODES=("$NODE" "${PEERS[*]}")
+		NODES=("$WORKING_NODE" "${PEERS[*]}")
+		;;
+	p)
+		POOL_NAME=${OPTARG}
 		;;
 	r)
 		REPLICA=${OPTARG}
@@ -105,28 +138,48 @@ while getopts 'b:n:N:r:v:hz' OPTION; do
 		;;
 	esac
 done
+
+#Verify nodes, exclude from NODES array if down or not in hosts file
+pingcheck
+#reset gfs if reset flag set. deletes all config files in /var/lib/glusterd/
 if [ "$RESET" == "yes" ];then
-	pause "Are you sure? This is destroy the gluster volume completely? (yes/no) " 
-	systemctl stop glusterd;
-	rm -rf /var/lib/glusterd/;
-	systemctl restart glusterd
+	echo ${NODES[*]}
+	#peerdetach
+	resetgfs
 	exit 0
 fi
-
-pingcheck
-# WORKING NODE
+# Open firewall ports for glusterfs management & daemon (24007-24008)
 gfirewall add
-checkglusterd $WORKING_NODE
-peerprobe
-# PEERS
-for PEER in ${PEERS[*]};do
-	checkglusterd $PEER
+# Start Gluster services on each node
+for n in ${NODES[*]};do
+	checkglusterd $n
 done
+# Probe clusters peers  
+peerprobe
+
+#Bricks
+if [ "$VOLUME_TYPE" == "linkedlist" ];then
+	if [ "${#NODES[@]}" -lt 2 ];then
+		echo "Minimum of two servers needed for Linked List"
+	fi
+	bcheck $BRICK_COUNT
+fi
+if [ "$BRICK_FLAG" == "yes" ];then
+	for n in ${NODES[*]};do
+		ssh root@$n "/opt/gtools/bin/bcreate $BRICK_COUNT $POOL_NAME $FORCE"
+	done
+fi
 # Create Volume
 case $VOLUME_TYPE in
 	linkedlist)
+		t1=("/opt/gtools/bin/linkedlist -b $BRICK_COUNT -N $VOLUME_NAME")
+		for peer in ${PEERS[*]};do
+			t2=("-n $peer")
+		done
+		$t1 $t2
+		echo "I made a linked list !"
 		;;
 	dist)
+		echo "I made a dist vol !"
 		;;
 esac
-

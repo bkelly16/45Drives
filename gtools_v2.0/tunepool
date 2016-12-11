@@ -1,0 +1,17 @@
+#!/bin/bash
+
+POOL_NAME=$1
+WORKING_NODE=$(hostname -s)
+
+zfs set atime=off $POOL_NAME
+zfs set xattr=sa $POOL_NAME
+zfs set exec=off $POOL_NAME
+zfs set sync=disabled $POOL_NAME
+zfs set compression=lz4 $POOL_NAME
+echo -e "Applied the Following Tunables on $WORKING_NODE:\n"
+zfs get atime $POOL_NAME | awk 'NR==2'
+zfs get xattr $POOL_NAME | awk 'NR==2'
+zfs get exec $POOL_NAME | awk 'NR==2'
+zfs get sync $POOL_NAME | awk 'NR==2'
+zfs get compression $POOL_NAME | awk 'NR==2'	
+echo
