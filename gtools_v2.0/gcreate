@@ -2,7 +2,7 @@
 pause(){ # Waits for user input to continue
 read -p "$1" con
 case $con in
-yes)
+yes|y)
 	;;
 *)
 	exit 0
@@ -99,20 +99,31 @@ checkroot(){
 		exit 0
 	fi
 }
+bfirewall(){
+	brick=$(expr $BRICK_COUNT - 1)
+	fport=$((ssh root@"${NODES[0]}" gluster vol status $VOLUME_NAME | awk 'NR==4{print $3}')2>/dev/null )
+	lport=$(expr $fport + $brick)
+	for node in ${NODES[*]};do
+		echo -e "$1ing ports $fport-$lport in firewall on $node"
+		ssh $node firewall-cmd --permanent --zone=public --$1-port=$fport-$lport/tcp
+	done
+}
+
 checkroot
-BRICK_COUNT=1
+BRICK_COUNT=2
 BRICK_FLAG=no
 VOLUME_NAME=tank
 WORKING_NODE=$(hostname -s)
 PEERS=()
 NODES=("$WORKING_NODE")
-REPLICA=1
+REPLICA=2
 VOLUME_TYPE=""
 RESET=no
 FORCE=no
 POOL_NAME=$(zfs list | awk 'NR==2{print $1}')
+STOP_FLAG=no
 
-while getopts 'b:fn:N:pr:v:hz' OPTION; do
+while getopts 'b:fn:N:pr:sv:hz' OPTION; do
 	case ${OPTION} in
 	b)
 		BRICK_FLAG=yes
@@ -137,6 +148,9 @@ while getopts 'b:fn:N:pr:v:hz' OPTION; do
 	v)
 		VOLUME_TYPE=${OPTARG}
 		;;
+	s)
+		STOP_FLAG=yes
+		;;
 	z)
 		RESET=yes
 		;;
@@ -154,6 +168,20 @@ if [ "$RESET" == "yes" ];then
 	#peerdetach
 	resetgfs
 	exit 0
+fi
+if [ "$STOP_FLAG" == "yes" ];then
+	gcheck=$(gluster vol info | grep "Volume Name" | awk -F: '{print $2}')
+	if [ -z "$gcheck" ];then
+		echo "No Volumes to stop"
+		exit 0
+	else
+		gluster volume list
+		echo "Stopping: $VOLUME_NAME"
+		bfirewall remove
+		gluster volume stop $VOLUME_NAME
+		gluster volume delete $VOLUME_NAME
+		exit 0
+	fi
 fi
 # Open firewall ports for glusterfs management & daemon (24007-24008)
 gfirewall add
@@ -173,18 +201,34 @@ if [ "$VOLUME_TYPE" == "linkedlist" ];then
 fi
 if [ "$BRICK_FLAG" == "yes" ];then
 	for n in ${NODES[*]};do
+		check=$(ssh root@$n "zfs list | grep vol | wc -l") 
+		if [ "$FORCE" == "yes" ];then
+			:
+		elif [ $check -gt 0 ];then
+			echo "$WORKING_NODE: bricks present use force flag to delete"
+			exit 0
+		fi
 		ssh root@$n "/opt/gtools/bin/bcreate $BRICK_COUNT $POOL_NAME $FORCE"
 	done
 fi
 # Create Volume
 case $VOLUME_TYPE in
 	linkedlist)
+		systemctl restart glusterd
 		t1=("/opt/gtools/bin/linkedlist -b $BRICK_COUNT -N $VOLUME_NAME")
 		for peer in ${PEERS[*]};do
+			ssh $peer systemctl restart glusterd
 			t2=("-n $peer")
 		done
 		$t1 $t2
-		echo "I made a linked list !"
+		sleep 4
+		gc=$(cat /etc/gtools/g.conf)
+		$gc
+		gluster volume info $VOLUME_NAME
+		echo
+		gluster volume start $VOLUME_NAME
+		echo
+		bfirewall add
 		;;
 	dist)
 		echo "I made a dist vol !"

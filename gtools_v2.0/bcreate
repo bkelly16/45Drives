@@ -35,14 +35,10 @@ BRICK_COUNT=$1
 POOL_NAME=$2
 FORCE=$3
 checkroot
-check=$(zfs list | grep vol | wc -l)	
-if [ "$FORCE" == "yes" ] && [ $check -gt 0 ]; then
+if [ "$FORCE" == "yes" ]; then
 	deletebrick
 	createbrick
 	/opt/gtools/bin/tunepool $POOL_NAME
-elif [ $check -gt 0 ];then
-	echo "$WORKING_NODE: bricks present use force flag to delete"
-	exit 0
 else
 	createbrick
 	/opt/gtools/bin/tunepool $POOL_NAME
