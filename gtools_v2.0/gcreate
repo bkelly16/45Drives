@@ -92,7 +92,14 @@ bcheck() {
 		exit 0
 	fi
 }
-
+checkroot(){
+	SCRIPT_NAME=$(basename "$0")
+	if [ "$EUID" -ne 0 ];then
+		echo "You must have root privileges to run $SCRIPT_NAME"
+		exit 0
+	fi
+}
+checkroot
 BRICK_COUNT=1
 BRICK_FLAG=no
 VOLUME_NAME=tank

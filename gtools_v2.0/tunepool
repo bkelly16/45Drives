@@ -1,5 +1,12 @@
 #!/bin/bash
-
+checkroot(){
+	SCRIPT_NAME=$(basename "$0")
+	if [ "$EUID" -ne 0 ];then
+		echo "You must have root privileges to run $SCRIPT_NAME"
+		exit 0
+	fi
+}
+checkroot
 POOL_NAME=$1
 WORKING_NODE=$(hostname -s)
 
