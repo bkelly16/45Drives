@@ -13,14 +13,16 @@ usage() { # Help
         cat << EOF
 Usage:	zcreate
 		[-b] Specify Brick Count
+		[-f] Force flag, overwite bricks if already present
 		[-N] Volume name
 		[-n] Specify nodes in trusted pool
 			- For each node you must use a sperate -n flag 
 			- gcreate -n node1 -n node2 -n node3
-		[-p] Specify zpool name. Only neccesary if multiple pools in system
+		[-p] Specify zpool name. Only neccesary if multiple pools
 		[-r] Replica count (linked list only)
 		[-v] Volume Type
 			Options: "linkedlist", "dist"
+		[-s] Stop & delete Volume
 		[-z] Reset gluster config files on each node specified
 		[-h] Displays this message
 
