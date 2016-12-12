@@ -218,7 +218,7 @@ case $VOLUME_TYPE in
 		t1=("/opt/gtools/bin/linkedlist -b $BRICK_COUNT -N $VOLUME_NAME")
 		for peer in ${PEERS[*]};do
 			ssh $peer systemctl restart glusterd
-			t2=("-n $peer")
+			t2+=("-n $peer")
 		done
 		$t1 $t2
 		sleep 4
