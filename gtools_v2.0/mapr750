@@ -55,4 +55,21 @@ case $CHASSIS in
         	let slot=slot+1
 	done
 	;;
+40)
+	card1=$(lspci | grep $DISK_CONTROLLER | awk 'NR==1{print $1}')
+	#CARD1
+	slot=1
+	while [ $slot -lt 41 ];do
+		echo "alias 1-$slot     /dev/disk/by-path/pci-0000:$card1-scsi-0:0:$(expr $slot - 1):0" >> /etc/zfs/vdev_id.conf
+        let slot=slot+1
+	done
+	#MOBO
+	mobo=41
+	s=2
+	while [ $mobo -lt 46 ];do
+		echo "alias 1-$mobo     /dev/disk/by-path/pci-0000:00:1f.2-ata-$s.0" >> /etc/zfs/vdev_id.conf
+		let s=s+1
+		let mobo=mobo+1
+	done
+	;;
 esac
