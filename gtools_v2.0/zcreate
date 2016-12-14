@@ -3,10 +3,13 @@
 usage() { # Help
         cat << EOF
 Usage:	zcreate
+		[-B] Specify number of bricks for gluster volume. Defaults to 2
 		[-b] Build Flag. Include to build the array
 		[-c] Custom Flag. Include for manual pool configuration
+		[-D] Destroys zpool
 		[-d] Specify how many drives to use. 
 			Default is every drive attached to HBA controller
+		[-f] Force Flag. Use if bricks are already present on zpool
 		[-l] Specify RAID level
 			Default is "raidz2"
 			Options: "raidz[123]", "mirror", "stripe"
@@ -22,7 +25,7 @@ EOF
         exit 0
 }
 pause(){ # Waits for user input to continue
-read -p "Press Enter to continue $1" con
+read -p "Press any to continue $1" con
 case $con in
 *)
 	;;
@@ -130,23 +133,37 @@ checkroot(){
 DEBUG_FLAG=no
 CUSTOM_FLAG=no
 BUILD_FLAG=no
+BRICK_FLAG=no
+BRICK_COUNT=2
+DESTROY_FLAG=no
+FORCE=no
 DIR=$(pwd)
 DRIVE_COUNT=0
 RAID_LEVEL=
 VDEV_COUNT=0
-ZPOOL_NAME=
+ZPOOL_NAME=zpool
 QUIET=no
 
-while getopts 'bcd:m:n:l:qv:zh' OPTION; do
+while getopts 'B:bcd:Dfm:n:l:qv:zh' OPTION; do
 	case ${OPTION} in
 	b)
 		BUILD_FLAG=yes
 		;;
+	B)
+		BRICK_FLAG=yes
+		BRICK_COUNT=${OPTARG}
+		;;
 	c)
 		CUSTOM_FLAG=yes
 		;;
+	D)
+		DESTROY_FLAG=yes
+		;;
 	d)
 		DRIVE_COUNT=${OPTARG}
+		;;
+	f)
+		FORCE=yes
 		;;
 	l)
 		RAID_LEVEL=${OPTARG}
@@ -179,6 +196,12 @@ if [ ! -e /etc/zfs/vdev_id.conf ];then
 	echo -e "/etc/zfs/vdev_id.conf does not exist.\nUse dmap to configure drive alias first"
 	exit 0
 fi
+if [ "$DESTROY_FLAG" == "yes" ];then
+	echo "Destroying $ZPOOL_NAME, You Sure?"
+	pause
+	zpool destroy $ZPOOL_NAME
+	exit 0
+fi
 # If no user input for DRIVE_COUNT then DRIVE_COUNT is eqaul to the number of elements in the DRIVES array
 if [ $DRIVE_COUNT -eq 0 ];then
 	DRIVE_COUNT=${#DRIVES[@]}
@@ -192,10 +215,6 @@ if [ "$RAID_LEVEL" == "stripe" ];then
 	RAID_LEVEL=
 elif [ -z $RAID_LEVEL ];then
 	RAID_LEVEL=raidz2
-fi
-# If no user input for ZPOOL_NAME then default to "zpool"
-if [ -z $ZPOOL_NAME ];then
-	ZPOOL_NAME=zpool
 fi
 # If custom flag is set lanuch manual configuration; else use auto mode
 if [ "$CUSTOM_FLAG" = "yes" ];then
@@ -211,6 +230,7 @@ if [ "$QUIET" == "yes" ];then
 	:
 elif [ "$QUIET" == "no" ];then
 	cat $DIR/z.conf
+	echo "Bricks: $BRICK_COUNT"
 fi
 # If build flag is present; run the zpool create command saved in z.conf
 if [ $BUILD_FLAG == yes ];then
@@ -219,6 +239,18 @@ else
 	echo
 	echo "Use "-b" flag to build the above zpool"
 	echo "Use "-h" flag for more options"
+	exit 0
+fi
+
+if [ "$BRICK_FLAG" == "yes" ];then
+	check=$(zfs list | grep vol | wc -l) 
+	if [ "$FORCE" == "yes" ];then
+		:
+	elif [ $check -gt 0 ];then
+		echo "$WORKING_NODE: bricks present use force flag to delete"
+		exit 0
+	fi
+	/opt/gtools/bin/bcreate $BRICK_COUNT $ZPOOL_NAME $FORCE
 fi
 
 if [ $DEBUG_FLAG == yes ];then

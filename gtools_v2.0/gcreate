@@ -103,11 +103,11 @@ checkroot(){
 }
 bfirewall(){
 	brick=$(expr $BRICK_COUNT - 1)
-	fport=$((ssh root@"${NODES[0]}" gluster vol status $VOLUME_NAME | awk 'NR==4{print $3}')2>/dev/null )
+	fport=$((gluster vol status $VOLUME_NAME | awk 'NR==4{print $3}')2>/dev/null )
 	lport=$(expr $fport + $brick)
 	for node in ${NODES[*]};do
 		echo -e "$1ing ports $fport-$lport in firewall on $node"
-		ssh $node firewall-cmd --permanent --zone=public --$1-port=$fport-$lport/tcp
+		ssh root@$node firewall-cmd --permanent --zone=public --$1-port=$fport-$lport/tcp
 	done
 }
 
@@ -219,20 +219,35 @@ case $VOLUME_TYPE in
 		systemctl restart glusterd
 		t1=("/opt/gtools/bin/linkedlist -b $BRICK_COUNT -N $VOLUME_NAME")
 		for peer in ${PEERS[*]};do
-			ssh $peer systemctl restart glusterd
+			ssh root@$peer systemctl restart glusterd
 			t2+=("-n $peer")
 		done
 		$t1 $t2
 		sleep 4
-		gc=$(cat /etc/gtools/g.conf)
-		$gc
+		create=$(cat /etc/gtools/g.conf)
+	$create
+	gluster volume info $VOLUME_NAME
+	echo
+	gluster volume start $VOLUME_NAME
+	echo
+	bfirewall add
+		;;
+	dist)
+		systemctl restart glusterd
+		t1=("/opt/gtools/bin/dist -b $BRICK_COUNT -N $VOLUME_NAME")
+		for peer in ${PEERS[*]};do
+			ssh root@$peer systemctl restart glusterd
+			t2+=("-n $peer")
+		done
+		$t1 $t2
+		sleep 4
+		create=$(cat /etc/gtools/g.conf)
+		$create
 		gluster volume info $VOLUME_NAME
 		echo
 		gluster volume start $VOLUME_NAME
 		echo
 		bfirewall add
 		;;
-	dist)
-		echo "I made a dist vol !"
-		;;
 esac
+
