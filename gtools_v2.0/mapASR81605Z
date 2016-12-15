@@ -1,7 +1,5 @@
 #!/bin/bash
-#!/bin/bash
 
-#!/bin/bash
 
 CHASSIS=$1
 DISK_CONTROLLER=$2
@@ -49,7 +47,6 @@ fi
 ####
 PORT_COUNT=4
 DRIVE_COUNT=4
-
 echo "# by-vdev" >> /etc/zfs/vdev_id.conf
 echo "# name     fully qualified or base name of device link" >> /etc/zfs/vdev_id.conf
 case $CHASSIS in

@@ -21,8 +21,16 @@ gethba() {
 	LSI|lsi|l)
 		DISK_CONTROLLER=$LSI_9201
 		;;
-	Adaptec|adaptec|a) 
-		DISK_CONTROLLER=$ADAPTEC
+	Adaptec|adaptec|a)
+		read -p "ASR81605Z or HBA1000?(a/h) " adap
+		case $adap in
+		a)
+			DISK_CONTROLLER=$ASR
+			;;
+		h)
+			DISK_CONTROLLER=$HBA1000
+			;;
+		esac
 		;;
 	rr3740|rr)
 		DISK_CONTROLLER=$RR3740
@@ -58,7 +66,8 @@ checkroot(){
 
 R750="0750"
 LSI_9201="2116"
-ADPATEC="Adaptec"
+ASR="Adaptec"
+HBA1000="Adaptec Series 8"
 RR3740="3740"
 DISK_CONTROLLER=
 CHASSIS=
@@ -110,10 +119,12 @@ if [ "$DISK_CONTROLLER" == "$R750" ];then
 	/opt/gtools/bin/mapr750 $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$LSI_9201" ];then
 	/opt/gtools/bin/maplsi $CHASSIS $DISK_CONTROLLER
-elif [ "$DISK_CONTROLLER" == "$ADAPTEC" ];then
+elif [ "$DISK_CONTROLLER" == "$ASR" ];then
 	/opt/gtools/bin/mapASR81605Z $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$RR3740" ];then
 	/opt/gtools/bin/maprr3740 $CHASSIS $DISK_CONTROLLER
+elif [ "$DISK_CONTROLLER" == "$HBA1000" ];then
+	/opt/gtools/bin/mapHBA1000 $CHASSIS $DISK_CONTROLLER
 fi
 
 if [ $UDEV_TRIG == "yes" ];then
