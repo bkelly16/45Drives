@@ -120,11 +120,11 @@ if [ "$DISK_CONTROLLER" == "$R750" ];then
 elif [ "$DISK_CONTROLLER" == "$LSI_9201" ];then
 	/opt/gtools/bin/maplsi $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$ASR" ];then
-	/opt/gtools/bin/mapASR81605Z $CHASSIS $DISK_CONTROLLER
+	/opt/gtools/bin/mapadaptec $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$RR3740" ];then
 	/opt/gtools/bin/maprr3740 $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$HBA1000" ];then
-	/opt/gtools/bin/mapHBA1000 $CHASSIS $DISK_CONTROLLER
+	/opt/gtools/bin/mapadaptec $CHASSIS $DISK_CONTROLLER
 fi
 
 if [ $UDEV_TRIG == "yes" ];then
