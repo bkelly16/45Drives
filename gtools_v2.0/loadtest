@@ -29,7 +29,7 @@ map(){ # Configures physical drive bay map
 # the first input argument is the DISK_CONTROLLER
 # The second input argument is the CHASSIS size
 # calling alias with no input will prompt for user input.
-	sudo dmap -c $1 -s $2
+	#sudo dmap -c $1 -s $2
 	mate-terminal --geometry=36x25 -e "watch -n 1 --color /opt/gtools/bin/lsdev" 2>/dev/null
 	echo
 }
