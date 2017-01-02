@@ -222,7 +222,7 @@ case $VOLUME_TYPE in
 			ssh root@$peer systemctl restart glusterd
 			t2+=("-n $peer")
 		done
-		$t1 $t2
+		$t1 ${t2[*]}
 		sleep 4
 		create=$(cat /etc/gtools/g.conf)
 	$create
@@ -239,7 +239,7 @@ case $VOLUME_TYPE in
 			ssh root@$peer systemctl restart glusterd
 			t2+=("-n $peer")
 		done
-		$t1 $t2
+		$t1 ${t2[*]}
 		sleep 4
 		create=$(cat /etc/gtools/g.conf)
 		$create

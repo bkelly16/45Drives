@@ -31,7 +31,7 @@ case $con in
 	;;
 esac
 }
-getbays() { # Fills array BAYS with physical slot number, whether there is a drive present or not
+getbays() { # Fills array BAYS with physical slot number, whether there is a drive present or not (creates array of all drive slots, wheter a is drive present or not)
 	i=0
 	j=3
 	BAYS=$((cat /etc/zfs/vdev_id.conf| awk "NR>2" | wc -l) 2>/dev/null)
@@ -42,7 +42,7 @@ getbays() { # Fills array BAYS with physical slot number, whether there is a dri
 		let j=j+1
 	done
 }
-getdrives() { # For each DRIVE in BAY, check if it is a block device. If true add to DRIVES array
+getdrives() { # For each DRIVE in BAY, check if it is a block device. If true add to DRIVES array (excludes empty drive slots)
 	DRIVES=()
 	for DRIVE in ${BAY[*]};do
 		if [ -b /dev/disk/by-vdev/$DRIVE ];then
@@ -200,12 +200,13 @@ while getopts 'B:bcd:Dfm:n:l:qv:zh' OPTION; do
 done
 
 checkroot
-getbays
-getdrives
 if [ ! -e /etc/zfs/vdev_id.conf ];then
 	echo -e "/etc/zfs/vdev_id.conf does not exist.\nUse dmap to configure drive alias first"
 	exit 0
 fi
+getbays
+getdrives
+
 if [ "$DESTROY_FLAG" == "yes" ];then
 	echo "Destroying $ZPOOL_NAME, You Sure?"
 	pause
@@ -247,6 +248,7 @@ fi
 # If build flag is present; run the zpool create command saved in z.conf
 if [ $BUILD_FLAG == yes ];then
 	cat $DIR/z.conf | /bin/sh
+	systemctl restart zfs-import-cache.service
 fi
 if [ $BRICK_FLAG == yes ];then
 	createbricks
