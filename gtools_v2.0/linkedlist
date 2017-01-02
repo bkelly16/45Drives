@@ -27,8 +27,8 @@ while getopts 'b:N:r:n:' OPTION; do
                 REPLICA=2 #ONLY REPLICA 2 SUPPORTED ATM
                 ;;
         n)
-                PEERS+=("$OPTARG")
-                NODES=("$WORKING_NODE" "${PEERS[*]}")
+                #PEERS+=("$OPTARG")
+                NODES+=("$OPTARG")
                 ;;
         esac
 done
@@ -70,7 +70,8 @@ i=0
 bcount=0
 while [ "$bset" -gt "$i" ];do
         j=0
-        for host in "${NODES[@]}";do
+        for host in ${NODES[@]};do
+                echo $host
                 f=$(expr $j + 1)
                 bcount1=$(expr $bcount + 1)
                 if [ "$f" -eq "${#NODES[@]}" ];then
