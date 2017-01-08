@@ -110,6 +110,19 @@ bfirewall(){
 		ssh root@$node firewall-cmd --permanent --zone=public --$1-port=$fport-$lport/tcp
 	done
 }
+readgvirt(){
+	if [ -z /etc/gtools/gvirt.conf ];then
+		echo "/etc/gtools/gvirt.conf is not present"
+		exit 1
+	fi
+	length=$(cat /etc/gtools/gvirt.conf | wc -l)
+	i=1
+	while [ $i -lt "$((length + 1))" ];do
+		temp=("$(cat /etc/gtools/gvirt.conf | awk -v line=$i NR==line'{print $1}')" "$(cat /etc/gtools/gvirt.conf | awk -v line=$i NR==line'{print $2}')")
+		VIRT_TUNES+=("${temp[@]}")
+		let i=i+1
+	done
+}
 
 checkroot
 BRICK_COUNT=2
@@ -124,12 +137,17 @@ RESET=no
 FORCE=no
 POOL_NAME=$(zfs list | awk 'NR==2{print $1}')
 STOP_FLAG=no
+VIRT_FLAG=no
 
-while getopts 'b:fn:N:pr:sv:hz' OPTION; do
+while getopts 'b:c:fn:N:pr:sv:Vhz' OPTION; do
 	case ${OPTION} in
 	b)
 		BRICK_FLAG=yes
 		BRICK_COUNT=${OPTARG}
+		;;
+	c)
+		CONFIG_FLAG=yes
+		CONFIG=${OPTARG}
 		;;
 	f)
 		FORCE=yes
@@ -149,6 +167,9 @@ while getopts 'b:fn:N:pr:sv:hz' OPTION; do
 		;;
 	v)
 		VOLUME_TYPE=${OPTARG}
+		;;
+	V)
+		VIRT_FLAG=yes
 		;;
 	s)
 		STOP_FLAG=yes
@@ -194,6 +215,21 @@ done
 # Probe clusters peers  
 peerprobe
 
+if [ "$CONFIG_FLAG" == "yes" ];then
+	VOLUME_NAME=$(cat $CONFIG | awk '{print $4}' )
+	systemctl restart glusterd
+	for peer in ${PEERS[*]};do
+		ssh root@$peer systemctl restart glusterd
+	done
+	sleep 4
+	cat $CONFIG | /bin/sh
+	gluster volume info $VOLUME_NAME
+	echo
+	gluster volume start $VOLUME_NAME
+	echo
+	bfirewall add
+	exit 0
+fi
 #Bricks
 if [ "$VOLUME_TYPE" == "linkedlist" ];then
 	if [ "${#NODES[@]}" -lt 2 ];then
@@ -225,12 +261,12 @@ case $VOLUME_TYPE in
 		$t1 ${t2[*]}
 		sleep 4
 		create=$(cat /etc/gtools/g.conf)
-	$create
-	gluster volume info $VOLUME_NAME
-	echo
-	gluster volume start $VOLUME_NAME
-	echo
-	bfirewall add
+		$create
+		gluster volume info $VOLUME_NAME
+		echo
+		gluster volume start $VOLUME_NAME
+		echo
+		bfirewall add
 		;;
 	dist)
 		systemctl restart glusterd
@@ -250,4 +286,13 @@ case $VOLUME_TYPE in
 		bfirewall add
 		;;
 esac
-
+if [ "$VIRT_FLAG" == "yes" ];then
+	echo "yes"
+	readgvirt
+	for option in ${VIRT_TUNES[*]};do
+		echo "gluster volume set $VOLUME_NAME $option"
+		#gluster volume set $VOLUME_NAME $option
+	done
+fi
+	
+	
