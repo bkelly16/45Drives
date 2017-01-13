@@ -21,13 +21,12 @@ fi
 gtools=https://github.com/bkelly16/45Drives/raw/master/gtools.tar.gz	
 repo=http://www.45drives.com/downloads
 zfsrepo=http://download.zfsonlinux.org/epel/zfs-release
-epel=https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-8.noarch.rpm
 
 ## Install wget & Development tools for current kernel 
 rpm -qa | grep -qw kernel-devel-$(uname -r) || yum install kernel-devel $1
 
 ## Install EPEL repository
-rpm -qa | grep -qw epel || yum install $epel $1
+rpm -qa | grep -qw epel || yum install epel-release $1
 
 ## Install PCI utils
 rpm -qa | grep -qw pciutils-3 || yum install pciutils $1
