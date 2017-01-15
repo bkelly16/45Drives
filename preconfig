@@ -3,76 +3,205 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+usage() {
+        cat << EOF
+Usage:	preconfig
+		[-a] Install all relevant packages. Does not include Ovirt
+		[-g] Install GlusterFS3.8 Packages
+		[-o] Install Ovirt4.0 Packages
+		[-s] Install Samba and CTDB packages
+		[-t] Install automated tools
+		[-z] Istall ZFS packages
+		[-f] Do not prompt for install confirmation
+		[-h] Display this message
+
+EOF
+        exit 0
+}
 status(){
-rpm -qa | grep -q $1 || echo "$1 failed to install" >> /tmp/clustercfg/install.log
+package=$1
+rpm -qa | grep -q $package || echo "$package failed to install" >> /var/log/preconfig.log
+}
+checkupdates(){
+yumtmp=/tmp/yum-check-update
+yum=/usr/bin/yum
+$yum check-update >> $yumtmp
+yumstatus=$?
+hostname=$(/bin/hostname)
+case $yumstatus in
+0)
+	echo "All packages are up to date"
+	;;
+*)
+	number=$(cat $yumtmp | egrep '(.i386|.x86_64|.noarch|.src)' | wc -l)
+	updates=$(cat $yumtmp | egrep '(.i386|.x86_64|.noarch|.src)')
+	echo -e "There are $number updates available on host $hostname\n"
+	#echo $updates
+	$yum update $FORCE
+        ;;
+esac
+rm -f /tmp/yum-check-update
 }
 
-wd=/tmp/clustercfg
-if [ ! -d $wd ];then
-	mkdir -p $wd
+FORCE=""
+while getopts 'afghoRstz' OPTION; do
+	case ${OPTION} in
+	a)
+		GLUSTER_FLAG=yes
+		SAMBA_FLAG=yes
+		TOOLS_FLAG=yes
+		ZFS_FLAG=yes
+		;;
+	f)
+		FORCE="-y"
+		;;
+	g)
+		GLUSTER_FLAG=yes
+		;;
+	h)
+		usage
+		;;
+	o)
+		OVIRT_FLAG=yes
+		;;
+	s)
+		SAMBA_FLAG=yes
+		;;
+	t)
+		TOOLS_FLAG=yes
+		;;
+	z)
+		ZFS_FLAG=yes
+		;;
+	esac
+done
+if [ $# -eq 0 ];then
+	usage
 fi
-if [ ! -e $wd/install.log ];then
-	touch $wd/install.log
+zfsrepo="http://download.zfsonlinux.org/epel/zfs-release"
+ovirtrepo="http://resources.ovirt.org/pub/yum-repo/ovirt-release40.rpm"
+gdeploy="https://github.com/bkelly16/45Drives/raw/master/rpmbuild/RPMS/noarch/gdeploy-2.0.1-1.el7.centos.noarch.rpm"
+gtools="https://github.com/bkelly16/45Drives/raw/master/rpmbuild/RPMS/noarch/gtools-2.0-16.noarch.rpm"
+
+if [ -e /var/log/preconfig.log ];then
+	rm -f /var/log/preconfig.log
+	touch /var/log/preconfig.log
 else
-	rm -f $wd/install.log
-	touch $wd/install.log
+	touch /var/log/preconfig.log
 fi
+##check for updates
+checkupdates
+## Required Packages
+rpm -qa | grep -qw kernel-devel-$(uname -r) || yum install kernel-devel $FORCE
+rpm -qa | grep -qw epel || yum install epel-release $FORCE
+rpm -qa | grep -qw pciutils-3 || yum install pciutils $FORCE
+rpm -qa | grep -qw vim || yum install vim $FORCE
+rpm -qa | grep -qw ntp || yum install ntp $FORCE
 
-gtools=https://github.com/bkelly16/45Drives/raw/master/gtools.tar.gz	
-repo=http://www.45drives.com/downloads
-zfsrepo=http://download.zfsonlinux.org/epel/zfs-release
+##disable selinux
+sed -ie 's/enforcing/disabled/g' /etc/selinux/config
 
-## Install wget & Development tools for current kernel 
-rpm -qa | grep -qw kernel-devel-$(uname -r) || yum install kernel-devel $1
-
-## Install EPEL repository
-rpm -qa | grep -qw epel || yum install epel-release $1
-
-## Install PCI utils
-rpm -qa | grep -qw pciutils-3 || yum install pciutils $1
-
-
-## Install gluster repo,main,client,and server packages
-rpm -qa | grep -q centos-release-gluster || yum install centos-release-gluster $1
-rpm -qa | grep -qw glusterfs-3 || yum install glusterfs $1
-rpm -qa | grep -qw glusterfs-fuse || yum install glusterfs-fuse $1
-rpm -qa | grep -qw glusterfs-server || yum install glusterfs-server $1
-
-## Install zfs
-rpm -qa | grep -qw zfs-release || yum install $zfsrepo$(rpm -E %dist).noarch.rpm $1
-gpg --quiet --with-fingerprint /etc/pki/rpm-gpg/RPM-GPG-KEY-zfsonlinux 
-rpm -qa | grep -qw zfs-dkms || yum install zfs $1
-if [ ! -d /etc/rc.modules ];then
-	touch /etc/rc.modules
+if [ "$ZFS_FLAG" == "yes" ];then
+	## Install zfs
+	rpm -qa | grep -qw zfs-release || yum install $zfsrepo$(rpm -E %dist).noarch.rpm $FORCE
+	gpg --quiet --with-fingerprint /etc/pki/rpm-gpg/RPM-GPG-KEY-zfsonlinux 
+	rpm -qa | grep -qw zfs-dkms || yum install zfs $FORCE
+	if [ ! -d /etc/rc.modules ];then
+		touch /etc/rc.modules
+	fi
+	zmod=$(cat /etc/rc.modules | grep "modprobe zfs" | awk 'NR==1')
+	if [ "$zmod" != "modprobe zfs" ];then
+		echo "modprobe zfs" >> /etc/rc.modules
+	fi
+	if [ ! -x /etc/rc.modules ];then
+		chmod +x /etc/rc.modules
+	fi
+	systemctl enable zfs-import-cache.service
+	systemctl enable zfs-mount.service
 fi
-zmod=$(cat /etc/rc.modules | grep "modprobe zfs" | awk 'NR==1')
-if [ "$zmod" != "modprobe zfs" ];then
-	echo "modprobe zfs" >> /etc/rc.modules
+if [ "$GLUSTER_FLAG" == "yes" ];then
+	## Install gluster repo,main,client,and server packages
+	rpm -qa | grep -q centos-release-gluster || yum install centos-release-gluster $FORCE
+	rpm -qa | grep -qw glusterfs-3 || yum install glusterfs $FORCE
+	rpm -qa | grep -qw glusterfs-fuse || yum install glusterfs-fuse $FORCE
+	rpm -qa | grep -qw glusterfs-server || yum install glusterfs-server $FORCE
+	rpm -qa | grep -qw glusterfs-geo-replication || yum install glusterfs-geo-replication $FORCE
 fi
-if [ ! -x /etc/rc.modules ];then
-	chmod +x /etc/rc.modules
+if [ "$SAMBA_FLAG" == "yes" ];then
+	rpm -qa | grep -qw ctdb || yum install ctdb $FORCE
+	rpm -qa | grep -qw samba-common-4 || yum install samba-common $FORCE
+	rpm -qa | grep -qw samba-4 || yum install samba $FORCE
+	rpm -qa | grep -qw samba-winbind-clients || yum install samba-winbind-clients $FORCE
+	rpm -qa | grep -qw samba-client || yum install samba-client $FORCE
+	rpm -qa | grep -qw samba-vfs-glusterfs || yum install samba-vfs-glusterfs $FORCE
 fi
-
+if [ "$TOOLS_FLAG" == "yes" ];then
+	rpm -qa | grep -qw ansible || yum install ansible $FORCE
+	rpm -qa | grep -qw gdeploy || yum install $gdeploy $FORCE
+	rpm -qa | grep -qw gtools || yum install $gtools $FORCE
+fi
+if [ "$OVIRT_FLAG" == "yes" ];then
+	rpm -qa | grep -qw ovirt-release40 || yum install $ovirtrepo $FORCE
+	rpm -qa | grep -qw ovirt-hosted-engine-setup || yum install ovirt-hosted-engine-setup $FORCE 
+	rpm -qa | grep -qw vdsm-gluster || yum install vdsm-gluster $FORCE
+	rpm -qa | grep -qw screen || yum install screen $FORCE
+fi
+		
 echo -e "All Done...\nVerifying Install..."
 status kernel-devel-$(uname -r)
 status epel
-status centos-release-gluster
-status glusterfs-3
-status glusterfs-fuse
-status glusterfs-server
-status zfs-release
-status zfs-dkms
-state=$(cat $wd/install.log | wc -l)
+status pciutils-3
+status vim
+status ntp
+if [ "$ZFS_FLAG" == "yes" ];then
+	status zfs-release
+	status zfs-dkms
+	zmount=$(systemctl status zfs-mount | awk NR==2'{print $4}' | cut -d ';' -f 1)
+	zimport=$(systemctl status zfs-import-cache | awk NR==2'{print $4}' | cut -d ';' -f 1)
+	if [ "$zmount" != "enabled" ];then
+		"zfs-mount.service was not enabled" >> /var/log/preconfig.log
+	fi
+	if [ "$zimport" != "enabled" ];then
+		"zfs-import-cache.service was not enabled" >> /var/log/preconfig.log
+	fi
+fi
+if [ "$GLUSTER_FLAG" == "yes" ];then
+	status centos-release-gluster
+	status glusterfs-3
+	status glusterfs-fuse
+	status glusterfs-server
+	status glusterfs-geo-replication
+fi
+if [ "$SAMBA_FLAG" == "yes" ];then
+	status ctdb 
+	status samba-common-4
+	status samba-4
+	status samba-winbind-clients
+	status samba-client
+	status samba-vfs-glusterfs
+fi
+if [ "$TOOLS_FLAG" == "yes" ];then
+	status ansible
+	status gdeploy
+	status gtools
+fi
+if [ "$OVIRT_FLAG" == "yes" ];then
+	status ovirt-release40
+	status ovirt-hosted-engine-setup
+	status vdsm-gluster
+	status screen
+fi
+state=$(cat /var/log/preconfig.log | wc -l)
 case $state in
 0)
 	echo -e "${GREEN}SUCCESS${NC}"
 	echo "Reboot before continuing setup"
+	
 	;;
 *)
 	echo -e "${RED}FAILURE${NC}"
 	echo -e "Problems during installation: $state"
-	cat $wd/install.log
+	cat /var/log/preconfig.log
 	echo -e "Rerun this script or manually try to install missing packages individually\nNOTE if installing the ZFS packages use \"yum install zfs\" rather than \"yum install zfs-dkms\""
 	;;
 esac
-rm -f $wd/install.log
