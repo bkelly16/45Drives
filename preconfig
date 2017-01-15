@@ -44,7 +44,7 @@ rm -f /tmp/yum-check-update
 }
 
 FORCE=""
-while getopts 'afghoRstz' OPTION; do
+while getopts 'afghostz' OPTION; do
 	case ${OPTION} in
 	a)
 		GLUSTER_FLAG=yes
@@ -95,7 +95,7 @@ checkupdates
 rpm -qa | grep -qw kernel-devel-$(uname -r) || yum install kernel-devel $FORCE
 rpm -qa | grep -qw epel || yum install epel-release $FORCE
 rpm -qa | grep -qw pciutils-3 || yum install pciutils $FORCE
-rpm -qa | grep -qw vim || yum install vim $FORCE
+rpm -qa | grep -qw vim-enhanced || yum install vim $FORCE
 rpm -qa | grep -qw ntp || yum install ntp $FORCE
 
 ##disable selinux
