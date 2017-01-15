@@ -59,6 +59,7 @@ for node in ${NODES[*]};do
 	if [ -z "$fwcheck" ];then
 		echo -e "$1 ports 24007,24008 in firewall on $node\n(Gluster Daemon, Gluster Management)"
 		ssh root@$node firewall-cmd --permanent --zone=public --$1-port=24007-24008/tcp 
+		ssh root@$node firewall-cmd --reload
 	fi
 done
 }
