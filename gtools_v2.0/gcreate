@@ -109,6 +109,7 @@ bfirewall(){
 	for node in ${NODES[*]};do
 		echo -e "$1ing ports $fport-$lport in firewall on $node"
 		ssh root@$node firewall-cmd --permanent --zone=public --$1-port=$fport-$lport/tcp
+		ssh root@$node firewall-cmd --reload
 	done
 }
 readgvirt(){
