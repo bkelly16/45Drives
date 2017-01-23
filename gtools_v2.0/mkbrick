@@ -70,6 +70,8 @@ fi
 check4integer() {
 if [[ ! $1 =~ ^-?[0-9]+$ ]];then
         echo "Integer only, do not include units"
+	echo "Syntax is XXX.YYY where XXX is TiB and YYY is GiB"
+	echo "7 TiB and 500 GiB would be 7.500, zeros matter" 
         exit 1
 fi
 }
@@ -185,6 +187,7 @@ while getopts 'Ab:Cdfm:n:Os:h' OPTION; do
         s)
                 CAP_FLAG=1
                 CAPPED_SIZE=${OPTARG}
+		check4integer $CAPPED_SIZE
                 ;;
         h)
                 usage
