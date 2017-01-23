@@ -218,7 +218,7 @@ done
 peerprobe
 
 if [ "$CONFIG_FLAG" == "yes" ];then
-	VOLUME_NAME=$(cat $CONFIG | awk '{print $4}' )
+	VOLUME_NAME=$(cat $CONFIG | awk NR==1'{print $4}' )
 	systemctl restart glusterd
 	for peer in ${PEERS[*]};do
 		ssh root@$peer systemctl restart glusterd

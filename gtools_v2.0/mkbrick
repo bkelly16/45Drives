@@ -187,7 +187,6 @@ while getopts 'Ab:Cdfm:n:Os:h' OPTION; do
         s)
                 CAP_FLAG=1
                 CAPPED_SIZE=${OPTARG}
-		check4integer $CAPPED_SIZE
                 ;;
         h)
                 usage
