@@ -1,0 +1,247 @@
+#!/bin/bash
+usage() {
+        cat << EOF
+Usage:  mkbrick
+                        [-A] Create Arbiter brick
+                        [-C] Create CTDB brick
+                        [-d] Debug flag. Prints all Varibles
+                        [-O] Create Ovirt Engine brick
+                        [-b] Specify number of bricks
+                        [-f] Force flag, rmeove bricks if present
+                        [-m] Alternate mountpoint
+                        [-n] Specify pool name
+                        [-s] Specify total size to use. Default is to use all space on pool
+                        [-h] Print this message
+EOF
+        exit 0
+}
+check4pool() {
+if [ -z $POOL_NAME ];then
+        echo "Pool name required"
+        exit 1
+else
+        zpool list | grep -w "$POOL_NAME" &>/dev/null
+        if [ $? -eq 1 ];then
+                echo "$HOSTNAME: Volume $POOL_NAME is not present"
+                exit 1
+        fi
+fi
+}
+check4brick() {
+if [ $VOLUME_BRICKS -eq 0 ];then
+        echo "Brick count required (-b #)"
+        exit 1
+fi
+zfs list | grep "$POOL_NAME/" &>/dev/null
+if [ $? -eq 0 ];then
+        if [ "$FORCE" == "yes" ];then
+                :
+        else
+                echo "$HOSTNAME: brick(s) present use force flag to continue anyway. Data will be lost if present"
+                exit 0
+        fi
+fi
+}
+check4input() {
+if [ $ARBITER_FLAG -eq 0 ];then
+        read -p "Are you creating an Arbiter Volume?[y/n] " arb
+        if [ "$arb" == "y" ];then
+                ARBITER_FLAG=1
+                read -p "Number of files expected in Volume(1Million = 1GB): " FILES
+                check4integer $FILES
+                u="G"
+                ARBITER_SIZE="$FILES$u"
+                ARBITER_CAPACITY=$(( FILES*gib2kib ))
+        fi
+fi
+if [ $CTDB_FLAG -eq 0 ];then
+        read -p "Are you using CTDB to share the volume?[y/n] " ctdb
+        if [ "$ctdb" == "y" ];then
+                CTDB_FLAG=1
+        fi
+fi
+if [ $OVIRT_FLAG -eq 0 ];then
+        read -p "Create volume for Ovirt Engine?[y/n] " ovirt
+        if [ "$ovirt" == "y" ];then
+                OVIRT_FLAG=1
+        fi
+fi
+}
+check4integer() {
+if [[ ! $1 =~ ^-?[0-9]+$ ]];then
+        echo "Integer only, do not include units"
+        exit 1
+fi
+}
+getspace() {
+unit=$(zfs list $POOL_NAME | awk NR==2'{print $3}')
+UNIT=${unit: -1}
+MAJOR=$(zfs list $POOL_NAME | awk  NR==2'{print $3}' | cut -d "." -f1)
+minor=$(zfs list $POOL_NAME | awk NR==2'{print $3}' | cut -d "." -f2)
+MINOR=${minor::-1}
+TOTAL_CAPACITY=$(( MAJOR*tib2kib + MINOR*gib2kib ))
+padded=$(( TOTAL_CAPACITY*PADDING ))
+PADDED_CAPACITY=$(( padded/100 ))
+}
+setcap() {
+M=$( echo $CAPPED_SIZE | cut -d "." -f1)
+m=$( echo $CAPPED_SIZE | cut -d "." -f2)
+if [ $m -gt 999 ];then
+        echo -e "syntax error: input size"
+        exit 1
+fi
+capped=$(( M*tib2kib + m*gib2kib ))
+if [ $capped -gt $PADDED_CAPACITY ];then
+        echo "Chosen size exceeds 90% of total pool capacity"
+        exit 1
+fi
+PADDED_CAPACITY=$capped
+}
+
+debug(){
+        echo "HOSTNAME=$HOSTNAME"
+        echo "POOL_NAME=$POOL_NAME"
+        echo "ARBITER_FLAG=$ARBITER_FLAG"
+        echo "ARBITER_SIZE=$ARBITER_SIZE"
+        echo "ARBITER_CAPACITY=$ARBITER_CAPACITY"
+        echo "CTDB_FLAG=$CTDB_FLAG"
+        echo "CTDB_SIZE=$CTDB_SIZE"
+        echo "CTDB_CAPACITY=$CTDB_CAPACITY"
+        echo "OVIRT_FLAG=$OVIRT_FLAG"
+        echo "OVIRT_SIZE=$OVIRT_SIZE"
+        echo "OVIRT_CAPACITY=$OVIRT_CAPACITY"
+        echo "VOLUME_BRICKS=$VOLUME_BRICKS"
+        echo "CAPACITY_UNIT=$UNIT"
+        echo "TOTAL_CAPACITY=$TOTAL_CAPACITY"
+        echo "MAJOR=$MAJOR"
+        echo "MINOR=$MINOR"
+        echo "PADDED_CAPACITY=$PADDED_CAPACITY"
+        echo "VOLUME_CAPACITY=$VOLUME_CAPACITY"
+        echo "OVERHEAD_CAPACITY=$OVERHEAD_CAPACITY"
+        echo "BRICK_CAPACITY=$BRICK_CAPACITY"
+        echo "MOUNTPOINT=$MOUNTPOINT"
+        echo "CAPPED_SIZE=$CAPPED_SIZE"
+}
+init(){
+tib2kib=1074000000
+gib2kib=1049000
+PADDING=90
+HOSTNAME=$(hostname -s)
+POOL_NAME=
+VOLUME_BRICKS=0
+BRICK_SIZE=""
+ARBITER_FLAG=0
+ARBITER_SIZE="500G" #500 Million Files
+ARBITER_CAPACITY=$(( 500*gib2kib ))
+CTDB_FLAG=0
+CTDB_SIZE="2G"
+CTDB_CAPACITY=$(( 2*gib2kib ))
+OVIRT_FLAG=0
+OVIRT_SIZE="100G"
+OVIRT_CAPACITY=$(( 100*gib2kib ))
+MOUNTPOINT="/"
+OVERHEAD_CAPACITY=0
+CAP_FLAG=0
+CAPPED_SIZE=0
+}
+
+init
+
+while getopts 'Ab:Cdfm:n:Os:h' OPTION; do
+        case ${OPTION} in
+        A)
+                ARBITER_FLAG=1
+                ;;
+        C)
+                CTDB_FLAG=1
+                ;;
+        d)
+                DEBUG_FLAG=yes
+                ;;
+        O)
+                OVIRT_FLAG=1
+                ;;
+        b)
+                VOLUME_BRICKS=${OPTARG}
+                ;;
+        f)
+                FORCE=yes
+                ;;
+        m)
+                mountpoint=${OPTARG}
+                if [ "${mountpoint: -1}" != "/" ];then
+                        MOUNTPOINT="$mountpoint/"
+                else
+                        MOUNTPOINT=$mountpoint
+                fi
+                if [ ! -d "$MOUNTPOINT" ];then
+                        echo "Mountpoint does not exist"
+                        exit 1
+                fi
+                ;;
+        n)
+                POOL_NAME=${OPTARG}
+                ;;
+        s)
+                CAP_FLAG=1
+                CAPPED_SIZE=${OPTARG}
+                ;;
+        h)
+                usage
+                ;;
+        esac
+done
+if [ $# -eq 0 ];then
+        usage
+fi
+
+## CHECK FOR POOL THEN FOR BRICKS
+check4pool
+check4brick
+## Prompt for config options if not specified
+check4input
+
+getspace
+if [ $CAP_FLAG -eq 1 ];then
+        setcap
+fi
+
+TOTAL_BRICK=$((ARBITER_FLAG + CTDB_FLAG + OVIRT_FLAG + VOLUME_BRICKS))
+
+if [ $OVIRT_FLAG -eq 1 ];then
+        OVERHEAD_CAPACITY=$(( OVERHEAD_CAPACITY + $OVIRT_CAPACITY ))
+        zfs create $POOL_NAME/engine
+        zfs set quota=$OVIRT_SIZE $POOL_NAME/engine
+        mkdir $MOUNTPOINT$POOL_NAME/engine/brick
+        echo "$HOSTNAME:$MOUNTPOINT$POOL_NAME/engine/brick"
+fi
+if [ $CTDB_FLAG -eq 1 ];then
+        OVERHEAD_CAPACITY=$(( OVERHEAD_CAPACITY + $CTDB_CAPACITY ))
+        zfs create $POOL_NAME/ctdb
+        zfs set quota=$CTDB_SIZE $POOL_NAME/ctdb
+        mkdir $MOUNTPOINT$POOL_NAME/ctdb/brick
+fi
+if [ $ARBITER_FLAG -eq 1 ];then
+        OVERHEAD_CAPACITY=$(( OVERHEAD_CAPACITY + $ARBITER_CAPACITY ))
+        zfs create $POOL_NAME/arb
+        zfs set quota=$ARBITER_SIZE $POOL_NAME/arb
+        mkdir $MOUNTPOINT$POOL_NAME/arb/brick
+fi
+
+VOLUME_CAPACITY=$(( PADDED_CAPACITY - OVERHEAD_CAPACITY ))
+BRICK_CAPACITY=$(( VOLUME_CAPACITY/VOLUME_BRICKS ))
+
+i=0
+j=$(expr $i + 1 )
+e="k"
+until [ $i -eq $VOLUME_BRICKS ];do
+        zfs create $POOL_NAME/vol$j 2>/dev/null
+        zfs set quota=$BRICK_CAPACITY$e $POOL_NAME/vol$j 2>/dev/null
+        mkdir $MOUNTPOINT$POOL_NAME/vol$j/brick 2>/dev/null
+        let i=i+1
+        let j=j+1
+done
+
+if [ "$DEBUG_FLAG" == "yes" ];then
+        debug
+fi
