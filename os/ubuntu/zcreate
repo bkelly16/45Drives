@@ -248,7 +248,6 @@ fi
 # If build flag is present; run the zpool create command saved in z.conf
 if [ $BUILD_FLAG == yes ];then
 	cat $DIR/z.conf | /bin/sh
-	systemctl restart zfs-import-cache.service
 fi
 if [ $BRICK_FLAG == yes ];then
 	createbricks
