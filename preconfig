@@ -38,6 +38,17 @@ case $yumstatus in
 	echo -e "There are $number updates available on host $hostname\n"
 	#echo $updates
 	$yum update $FORCE
+	read -p "Reboot Required, reboot now? [Y/n] op1
+	case $op1 in
+	y)
+		echo -e "Going down for reboot....\nRerun the same command to finish install ($(basename "$0") $@)"
+		reboot
+		;;
+	*)
+		echo "Do not continue with preconfig install until you reboot!! Things will fail!!"
+		exit 0
+		;;
+	esac
         ;;
 esac
 rm -f /tmp/yum-check-update
