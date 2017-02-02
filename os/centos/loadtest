@@ -1,0 +1,185 @@
+#! /bin/bash
+
+
+usage() {
+        cat << EOF
+Usage:
+	loadtest [-a] [-tvzh] 
+	loadtest [-c hba] [-s bays] [-r raid level] [-l layout] [-b blocksize] [-n block count]
+
+	-a	Run in auto mode. Without -c & -s specifed user input required
+	-b	Specify blocksize for datatest
+	-c	Disk controller
+		- Supported Controllers:
+			- LSI 9201 (i.e LSI,lsi,l)
+			- HighPoint R750 (i.e R750,r750,r)
+	-l	Specify VDEV layout
+	-m 	Manual Pool Configuration
+	-n	Specify block count for datatest. Total file size = BLOCKSIZE * COUNT
+	-r	Specify RAID level
+	-s	Specify number of physical bays
+	-t	Monitor drive temperatures during test
+	-z 	Disable ZFS tunes
+	-h	Show this summary 
+
+EOF
+        exit 0
+}
+map(){ # Configures physical drive bay map
+# the first input argument is the DISK_CONTROLLER
+# The second input argument is the CHASSIS size
+# calling alias with no input will prompt for user input.
+	#sudo dmap -c $1 -s $2
+	mate-terminal --geometry=36x25 -e "watch -n 1 --color /opt/gtools/bin/lsdev" 2>/dev/null
+	echo
+}
+temperature(){ # Lauch Drive Temperature Monitor
+	if [ $TEMP_MODE == yes ];then
+		mate-terminal --geometry=36x25 -e "watch -n 60 --color /opt/gtools/bin/lstemp" 2>/dev/null
+	fi
+}
+vdev(){ # Launch VDEV map
+	if [ $VDEV_MODE == yes ];then
+		mate-terminal --geometry=36x25 -e "watch -n 1 --color /opt/gtools/bin/lsvdev" 2>/dev/null
+	fi
+}
+datatest(){ #Launch Datatest. Writes & then Reads 5x 500GB File @ 1MB blocksize
+	mate-terminal --geometry=50x10 -e "watch -n 1 ls -lh /zpool/" 2>/dev/null
+	CHECK=$(df | grep zpool | awk '{print $1}')
+	if [ ! -z $CHECK ];then
+		for i in 1 2 3 4 5 6; do
+			echo "Writing Test File $i"
+			 sudo dd if=/dev/zero of=/zpool/test$i bs=$1 count=$2 2>&1 | awk 'NR==3'
+		done
+		echo
+		for i in 1 2 3 4 5 6; do
+			echo "Reading Test File $i"
+			sudo dd if=/zpool/test$i of=/dev/null bs=$1 2>&1 | awk 'NR==3'
+		done
+	else
+		echo "Pool Not Mounted"
+	fi
+	#sh /root/Desktop/pod-test/datatest.sh $1 $2
+}
+tunepool(){ #atime=off;xattr=sa;async=0;exec=yes;compression=lz4
+	if [ ! -z $TUNE ];then
+		sudo zfs set atime=off zpool
+		sudo zfs set xattr=sa zpool
+		sudo zfs set exec=off zpool
+		sudo zfs set sync=disabled zpool
+		sudo zfs set compression=lz4 zpool
+		echo -e "Applied the Following Tunables on $name:\n"
+		sudo zfs get atime zpool | awk 'NR==2'
+		sudo zfs get xattr zpool | awk 'NR==2'
+		sudo zfs get exec zpool | awk 'NR==2'
+		sudo zfs get sync zpool | awk 'NR==2'
+		sudo zfs get compression zpool | awk 'NR==2'	
+		echo
+	fi
+}
+cleanup(){ #Destroy pool and wipe drives
+	echo -e "\nAll Done\nCleaning Up....."
+	sudo zpool destroy zpool
+	sudo wipedev
+}
+check(){ # Verify inputs
+	if [ $1 -eq 30 ] || [ $1 -eq 45 ] || [ $1 -eq 60 ];then
+		:
+	elif [ $1 -eq 40 ];then	
+		if [ "$DISK_CONTROLLER" == "$R750" ];then
+			:
+		else
+			echo "Chassis: $1 is only supported for Controller: $R750"
+			exit 0
+		fi		
+	else
+		echo "$1 is not an available chassis size, (30,45,60 or 40(lite))"
+		exit 0
+	fi
+}
+pause(){ # Waits for user input to continue
+read -p "Press Enter to continue" con
+case $con in
+*)
+	;;
+esac
+}
+checkroot(){
+	SCRIPT_NAME=$(basename "$0")
+	if [ "$EUID" -ne 0 ];then
+		echo "You must have root privileges to run $SCRIPT_NAME"
+		exit 0
+	fi
+}
+
+AUTO_MODE=yes
+DISK_CONTROLLER=
+RAID_LEVEL=raidz1
+CHASSIS=
+TEMP_MODE=no
+BLOCK_SIZE=1M
+COUNT=500000
+TUNE=yes
+VDEV_MODE=no
+CUSTOM=
+
+while getopts 'ab:c:l:n:r:s:tvzh' OPTION; do
+	case ${OPTION} in
+	a)
+		AUTO_MODE=yes
+		;;
+	b)
+		BLOCK_SIZE=${OPTARG}
+		;;
+	c)
+		DISK_CONTROLLER=${OPTARG}
+		;;
+	l)
+		LAYOUT=${OPTARG}
+		;;
+	m)
+		CUSTOM="-c"
+		;;
+	n)
+		COUNT=${OPTARG}
+		;;
+	r)
+		RAID_LEVEL=${OPTARG}
+		;;
+	s)
+		CHASSIS=${OPTARG}
+		;;
+	t)
+		TEMP_MODE=yes
+		;;
+	v)
+		VDEV_MODE=yes
+		;;
+	z)
+		TUNE=
+		;;
+	h)
+		usage
+		;;
+	esac
+done
+if [ $# = 0 ];then
+	usage
+fi
+
+checkroot
+
+if [ $AUTO_MODE == yes ];then
+	if [ -z $DISK_CONTROLLER ] || [ -z $CHASSIS ];then
+		read -p "Enter Disk Controller: " DISK_CONTROLLER
+		read -p "Enter Number of physical bays: " CHASSIS
+	fi
+	#check $CHASSIS
+	map $DISK_CONTROLLER $CHASSIS
+	temperature
+	sudo zcreate -b -l $RAID_LEVEL $CUSTOM
+	tunepool
+	vdev
+	datatest $BLOCK_SIZE $COUNT
+	cleanup
+fi

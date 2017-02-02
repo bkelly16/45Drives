@@ -1,0 +1,100 @@
+#!/bin/bash
+usage() {
+        cat << EOF
+Usage:  check_disk_status
+        [-N] ZFS Pool name (required)
+EOF
+        exit 0
+}
+getdev() {
+i=0
+j=1
+DEVICES=$((zpool status $POOL_NAME | grep - | grep -v raid | awk '{print $1}' | wc -l) 2>/dev/null)
+while [ $i -lt $DEVICES ];do
+	DEVICE[$i]=$(zpool status $POOL_NAME | grep - | grep -v raid | awk -v j=$j 'NR==j{print $1}')
+	let i=i+1
+	let j=j+1
+done
+}
+getstate() {
+i=0
+j=1
+while [ $i -lt $DEVICES ];do
+	STATE[$i]=$(zpool status $POOL_NAME | grep - | grep -v raid | awk -v j=$j 'NR==j{print $2}')
+	let i=i+1
+	let j=j+1
+done
+}
+getoffline() {
+i=0
+j=0
+for state in ${STATE[*]};do
+	if [ $state == "OFFLINE" ];then
+		offlinedev[$j]="${DEVICE[$i]}: OFFLINE"
+		let j=j+1
+	fi
+	let i=i+1
+done
+}
+getunavailable() {
+i=0
+j=0
+for state in ${STATE[*]};do
+	if [ $state == "UNAVAIL" ];then
+		unavaildev[$j]="${DEVICE[$i]}: UNAVAIL"
+		let j=j+1
+	fi
+	let i=i+1
+done
+}
+getfaulted() {
+i=0
+j=0
+for state in ${STATE[*]};do
+	if [ $state == "FAULTED" ];then
+		faulteddev[$j]="${DEVICE[$i]}: FAULTED"
+		let j=j+1
+	fi
+	let i=i+1
+done
+}
+
+while getopts 'N:h' OPTION; do
+        case ${OPTION} in
+        N)
+                POOL_NAME=${OPTARG}
+        ;;
+        h)
+                usage
+        ;;
+        esac
+done
+
+if [ $# -eq 0 ];then
+        usage
+fi
+
+getdev
+getstate
+getoffline
+getunavailable
+getfaulted
+
+if [ ${#DEVICE[@]} -eq 0 ];then
+        echo "UNKNOWN: Unable to get drives, $POOL_NAME is not present in system"
+        exit 3
+elif [ ${#offlinedev[@]} -eq 0 ] && [ ${#unavaildev[@]} -eq 0 ] && [ ${#faulteddev[@]} -eq 0 ];then
+        echo "OK: All drives ONLINE"
+        exit 0
+elif [ ${#offlinedev[@]} -gt 0 ];then
+        echo "WARNING:$(zpool status -x $POOL_NAME | grep status | awk NR==1 | cut -d ":" -f2)"
+        printf '%s\n' "${offlinedev[@]}"
+        exit 1
+elif [ ${#getunavailable[@]} -gt 0 || ${#getfaulted[@]} -gt 0 ];then
+        echo "CRITICAL:$(zpool status -x $POOL_NAME | grep status | awk NR==1 | cut -d ":" -f2)"
+        printf '%s\n' "${unavaildev[@]}"
+        exit 2
+else
+        echo "UNKNOWN: sumpins up"
+        exit 3
+fi

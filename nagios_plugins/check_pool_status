@@ -1,0 +1,48 @@
+#!/bin/bash
+usage() {
+        cat << EOF
+Usage:  check_pool_status
+        [-N] ZFS Pool name (required)
+EOF
+        exit 0
+}
+if [ $# -eq 0 ];then
+        usage
+fi
+POOL_NAME=
+while getopts 'N:h' OPTION; do
+        case ${OPTION} in
+        N)
+                POOL_NAME=${OPTARG}
+        ;;
+        h)
+                usage
+        ;;
+        esac
+done
+
+if [ -z $POOL_NAME ];then
+        echo "Syntax Error: Pool Name Required"
+        exit 3
+fi
+
+POOL_STATUS=$(( zpool status $POOL_NAME | grep state | awk NR==1 | cut -d ":" -f2)2>/dev/null)
+OUTPUT="$POOL_NAME:$POOL_STATUS"
+
+if [ "$POOL_STATUS" == " ONLINE" ];then
+        echo "$POOL_NAME is online and healthy"
+        echo "OK- $OUTPUT"
+        exit 0
+elif [ "$POOL_STATUS" == " DEGRADED" ];then
+        echo $( zpool status $POOL_NAME | grep status | cut -d ":" -f2)
+        echo "WARNING- $OUTPUT"
+        exit 1
+elif [ "$POOL_STATUS" == " UNAVAIL" ];then
+        echo $( zpool status $POOL_NAME | grep status | cut -d ":" -f2)
+        echo "CRITICAL- $OUTPUT"
+        exit 2
+else
+        echo "Pool is not present"
+        echo "UNKNOWN- NO POOL PRESENT"
+        exit 3
+fi

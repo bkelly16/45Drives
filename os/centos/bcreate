@@ -1,0 +1,46 @@
+#!/bin/bash
+createbrick() {
+	capacity=$(df | grep $POOL_NAME | awk 'NR==1{print $2}')
+	bsize=$(expr $capacity / $BRICK_COUNT )
+	i=0	
+	j=$(expr $i + 1 )
+	e="k"
+	until [ $i -eq $BRICK_COUNT ];do
+		zfs create $POOL_NAME/vol$j 2>/dev/null
+		mkdir /$POOL_NAME/vol$j/brick 2>/dev/null
+		echo "$WORKING_NODE: Created brick: $POOL_NAME/vol$j"
+		zfs set quota=$bsize$e $POOL_NAME/vol$j 2>/dev/null
+		let i=i+1
+		let j=j+1
+	done
+}
+deletebrick() {
+dir=$(pwd)
+cd /
+for brick in $POOL_NAME/vol*;do
+	zfs destroy -rf $brick 2>/dev/null
+	echo "$WORKING_NODE: Destroyed brick: $brick"
+done
+cd $dir
+}
+checkroot(){
+	SCRIPT_NAME=$(basename "$0")
+	if [ "$EUID" -ne 0 ];then
+		echo "You must have root privileges to run $SCRIPT_NAME"
+		exit 0
+	fi
+}
+WORKING_NODE=$(hostname -s)
+BRICK_COUNT=$1
+POOL_NAME=$2
+FORCE=$3
+checkroot
+if [ "$FORCE" == "yes" ]; then
+	deletebrick
+	createbrick
+	/opt/gtools/bin/tunepool $POOL_NAME
+else
+	createbrick
+	/opt/gtools/bin/tunepool $POOL_NAME
+fi
+
