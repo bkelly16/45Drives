@@ -60,7 +60,7 @@ i=0
 while [ "$i" -lt $BAYS ];do 
 	parted -s /dev/disk/by-vdev/${BAY[$i]} mklabel loop 2&>/dev/null
 	if [ $? -eq 0 ]; then
-		echo -e "Partitions Table on device ${BAY[$i]} has been wiped"
+		echo -e "Partition Table on device ${BAY[$i]} has been wiped"
 	fi
 	let i=i+1
 done
