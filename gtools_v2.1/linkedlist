@@ -1,0 +1,91 @@
+#!/bin/bash
+checkroot(){
+        SCRIPT_NAME=$(basename "$0")
+        if [ "$EUID" -ne 0 ];then
+                echo "You must have root privileges to run $SCRIPT_NAME"
+                exit 0
+        fi
+}
+checkroot
+
+BRICK_COUNT=2
+WORKING_NODE=$(hostname -s)
+REPLICA=2
+VOLUME_NAME=tank
+PEERS=()
+NODES=("$WORKING_NODE")
+
+while getopts 'b:N:r:n:' OPTION; do
+        case ${OPTION} in
+        b)
+                BRICK_COUNT=${OPTARG}
+                ;;
+        N)
+                VOLUME_NAME=${OPTARG}
+                ;;
+        r)
+                REPLICA=2 #ONLY REPLICA 2 SUPPORTED ATM
+                ;;
+        n)
+                #PEERS+=("$OPTARG")
+                NODES+=("$OPTARG")
+                ;;
+        esac
+done
+
+echo brick#:$BRICK_COUNT
+echo vname:$VOLUME_NAME
+echo rep:$REPLICA
+echo nodes:${NODES[*]}
+
+#bset is used to create linked list command, every two bricks the process resets. ( i.e for each bset do the same loop to create command)
+bset=$(expr $BRICK_COUNT / 2)
+
+i=0
+b=1
+# Create array of bricks , (1 2 3 4 .... brickn)
+while [ "$BRICK_COUNT" -gt "$i" ];do
+        BRICKS[$i]=$b
+        let i=i+1
+        let b=b+1
+done
+
+#check to see if g.conf is present, if not make it, if it is delete and remake
+if [ ! -e /etc/gtools/g.conf ];then
+        touch /etc/gtools/g.conf
+else
+        rm -f /etc/gtools/g.conf
+        touch /etc/gtools/g.conf
+fi
+
+# Print the first part of the gluster command, "gluster volume create" starts the process, volume name and replica level is passed in.
+# This is outputted into g.conf
+printf "gluster volume create %s replica %s " $VOLUME_NAME $REPLICA >> /etc/gtools/g.conf
+
+# Loop through bset and output brick pairs into g.conf,
+# each node is paired next node in the list (gluster1 -> gluster2)
+# If the "next" node in the list doesnt exist, then pair that node with the first node, to make a linked list.
+# each the bricks are always (brick 1 -> brick 2, brick 3 -> brick4) and so on for the number of bricks present.
+i=0
+bcount=0
+while [ "$bset" -gt "$i" ];do
+        j=0
+        for host in ${NODES[@]};do
+                echo $host
+                f=$(expr $j + 1)
+                bcount1=$(expr $bcount + 1)
+                if [ "$f" -eq "${#NODES[@]}" ];then
+                        printf "%s:/zpool/vol%s/brick %s:/zpool/vol%s/brick " ${NODES[$j]} ${BRICKS[$bcount]} ${NODES[0]} ${BRICKS[$bcount1]} >> /etc/gtools/g.conf
+                else
+                        printf "%s:/zpool/vol%s/brick %s:/zpool/vol%s/brick " ${NODES[$j]} ${BRICKS[$bcount]} ${NODES[$f]} ${BRICKS[$bcount1]} >> /etc/gtools/g.conf
+                fi
+                let j=j+1
+        done
+        let bcount=bcount+2
+        let i=i+1
+done
+printf "%s\n" force >> /etc/gtools/g.conf
+
+echo
+cat /etc/gtools/g.conf
+echo
