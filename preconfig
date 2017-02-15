@@ -94,7 +94,7 @@ if [ $# -eq 0 ];then
 fi
 zfsrepo="http://download.zfsonlinux.org/epel/zfs-release"
 ovirtrepo="http://resources.ovirt.org/pub/yum-repo/ovirt-release40.rpm"
-gdeploy="https://github.com/bkelly16/45Drives/raw/master/rpmbuild/RPMS/noarch/gdeploy-2.0.1-1.el7.centos.noarch.rpm"
+#gdeploy="https://github.com/bkelly16/45Drives/raw/master/rpmbuild/RPMS/noarch/gdeploy-2.0.1-1.el7.centos.noarch.rpm"
 #gtools="https://github.com/bkelly16/45Drives/raw/master/rpmbuild/RPMS/noarch/gtools-2.0-16.noarch.rpm"
 repo="http://images.45drives.com"
 
@@ -152,7 +152,7 @@ if [ "$SAMBA_FLAG" == "yes" ];then
 fi
 if [ "$TOOLS_FLAG" == "yes" ];then
         rpm -qa | grep -qw ansible || yum install ansible $FORCE
-        rpm -qa | grep -qw gdeploy || yum install $gdeploy $FORCE
+        rpm -qa | grep -qw gdeploy || yum install "$repo"/gtools/gdeploy-2.0.1-1.el7.centos.noarch.rpm $FORCE
         rpm -qa | grep -qw gtools || yum install "$repo"/gtools/gtools-"$GTOOLS_VERSION"-"$RELEASE".noarch.rpm $FORCE
 fi
 if [ "$OVIRT_FLAG" == "yes" ];then
