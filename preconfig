@@ -153,7 +153,7 @@ fi
 if [ "$TOOLS_FLAG" == "yes" ];then
         rpm -qa | grep -qw ansible || yum install ansible $FORCE
         rpm -qa | grep -qw gdeploy || yum install $gdeploy $FORCE
-        rpm -qa | grep -qw gtools || yum install "$repo"/gtools-"$GTOOLS_VERSION"-"$RELEASE".noarch.rpm $FORCE
+        rpm -qa | grep -qw gtools || yum install "$repo"/gtools/gtools-"$GTOOLS_VERSION"-"$RELEASE".noarch.rpm $FORCE
 fi
 if [ "$OVIRT_FLAG" == "yes" ];then
         rpm -qa | grep -qw ovirt-release40 || yum install $ovirtrepo $FORCE
