@@ -3,23 +3,24 @@
 usage() { # Help
         cat << EOF
 Usage:	zcreate
-		[-B] Brick Flag, Launch brick creation tool after pool creation
-		[-b] Build Flag. Include to build the array
-		[-c] Custom Flag. Include for manual pool configuration
-		[-D] Destroys zpool
-		[-d] Specify how many drives to use. 
-			Default is every drive attached to HBA controller
-		[-f] Force Flag. Use if bricks are already present on zpool
-		[-l] Specify RAID level
-			Default is "raidz2"
-			Options: "raidz[123]", "mirror", "stripe"
-		[-m] Specify alternate mount point
-			Default: /{pool}
-		[-n] Specify zpool name. Defaults to "zpool"
-		[-q] Quiet Mode
-		[-v] Specify number of VDEVs to use
-		[-z] Debug flag. Prints all varibles&temp files to terminal
-		[-h] Displays this message
+	[-a] Set ashift value
+	[-b] Build Flag. Include to build the array
+	[-c] Custom Flag. Include for manual pool configuration
+	[-D] Destroys zpool
+	[-d] Specify how many drives to use. 
+		Default is every drive attached to HBA controller
+	[-f] Force Flag. Use if bricks are already present on zpool
+	[-l] Specify RAID level
+		Default is "raidz2"
+		Options: "raidz[123]", "mirror", "stripe"
+	[-m] Specify alternate mount point
+		Default: /{pool}
+	[-n] Specify zpool name. Defaults to "zpool"
+	[-q] Quiet Mode
+	[-t] IF flag is present, DO NOT apply default ZFS tuneables
+	[-v] Specify number of VDEVs to use
+	[-z] Debug flag. Prints all varibles&temp files to terminal
+	[-h] Displays this message
 EOF
         exit 0
 }
@@ -60,6 +61,8 @@ setvdevcount() { # Starting at default VDEV_COUNT for chassis size, if DRIVE_COU
 	60)
 		VDEV_COUNT=5
 		;;
+	*)
+		VDEV_COUNT=1
 	esac
 	while :
 	do
@@ -114,15 +117,15 @@ createpool(){ # Reads z.tmp file and writes zpool creation command and saves in 
 	if [ ! -z $MOUNT_DIR ];then
 		printf "%s %s " "-m" $MOUNT_DIR >> $DIR/z.conf
 	fi
+	if [ "$ASHIFT_FLAG" == "yes" ];then
+		printf "%s %s " "-o" "ashift=$ASHIFT" >> $DIR/z.conf
+	fi
 	i=1
 	while [ $i -lt $((VDEV_COUNT + 1)) ];do
 		printf "%s %s " $RAID_LEVEL $(cat z.tmp | awk -v i=$i 'NR==i') >> $DIR/z.conf
 		let i=i+1
 	done
 	echo >> $DIR/z.conf
-}
-createbricks() {
-	/opt/gtools/bin/mkbrick -n $ZPOOL_NAME
 }
 checkroot(){
 	SCRIPT_NAME=$(basename "$0")
@@ -135,7 +138,6 @@ checkroot(){
 DEBUG_FLAG=no
 CUSTOM_FLAG=no
 BUILD_FLAG=no
-BRICK_FLAG=no
 DESTROY_FLAG=no
 FORCE=no
 DIR=$(pwd)
@@ -144,14 +146,17 @@ RAID_LEVEL=
 VDEV_COUNT=0
 ZPOOL_NAME=zpool
 QUIET=no
+TUNE_FLAG=yes
+ASHIFT_FLAG=no
 
-while getopts 'bcd:Dfm:n:l:qv:zh' OPTION; do
+while getopts 'a:bcd:Dfm:n:l:tqv:zh' OPTION; do
 	case ${OPTION} in
+	a)
+		ASHIFT_FLAG=yes
+		ASHIFT=${OPTARG}
+		;;
 	b)
 		BUILD_FLAG=yes
-		;;
-	B)
-		BRICK_FLAG=yes
 		;;
 	c)
 		CUSTOM_FLAG=yes
@@ -176,6 +181,9 @@ while getopts 'bcd:Dfm:n:l:qv:zh' OPTION; do
 		;;
 	q)
 		QUIET=yes
+		;;
+	t)
+		TUNE_FLAG=no
 		;;
 	v)
 		VDEV_COUNT=${OPTARG}
@@ -235,14 +243,13 @@ fi
 # If build flag is present; run the zpool create command saved in z.conf
 if [ $BUILD_FLAG == yes ];then
 	cat $DIR/z.conf | /bin/sh
+	if [ $TUNE_FLAG == yes ];then
+		/opt/gtools/bin/tunepool $ZPOOL_NAME
+	fi
 	systemctl restart zfs-import-cache.service
-fi
-if [ $BRICK_FLAG ==yes ];then
-	createbricks
 fi
 
 if [ $DEBUG_FLAG == yes ];then
-	echo "brick count: $BRICK_COUNT"
 	echo "drive count: $DRIVE_COUNT"
 	echo "raid level: $RAID_LEVEL"
 	echo "zpool name $ZPOOL_NAME"
@@ -255,9 +262,8 @@ else
 	rm -f $DIR/z.conf
 	rm -f $DIR/z.tmp
 fi
-if [ $BUILD_FLAG == no ] && [ $BRICK_FLAG == no ];then
+if [ $BUILD_FLAG == no ];then
 	echo
-	echo "Use "-B" to create datasets/bricks"
 	echo "Use "-b" flag to build the above zpool"
 	echo "Use "-h" flag for more options"
 	exit 0

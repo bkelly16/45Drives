@@ -1,17 +1,20 @@
 #!/bin/bash
 usage() {
         cat << EOF
-Usage:  mkbrick
-                        [-A] Create Arbiter brick
-                        [-C] Create CTDB brick
-                        [-d] Debug flag. Prints all Varibles
-                        [-O] Create Ovirt Engine brick
-                        [-b] Specify number of bricks
-                        [-f] Force flag, rmeove bricks if present
-                        [-m] Alternate mountpoint
-                        [-n] Specify pool name
-                        [-s] Specify total size to use. Default is to use all space on pool
-                        [-h] Print this message
+Usage:  mkbrick -n {POOL_NAME}
+	[-A] Create Arbiter brick
+	[-C] Create CTDB brick
+	[-d] Debug flag. Prints all Varibles
+	[-O] Create Ovirt Engine brick
+	[-b] Specify number of bricks
+	[-f] Force flag, rmeove bricks if present
+	[-m] Alternate mountpoint
+	[-s] Specify total size.
+		Syntax is XXX.YYY (TiB.GiB)
+		ex) 7 TiB and 500 GiB would be 7.500 
+		Default is to use 100% of available
+	[-h] Print this message
+	
 EOF
         exit 0
 }
@@ -42,7 +45,7 @@ if [ $? -eq 0 ];then
         if [ "$FORCE" == "yes" ];then
                 :
         else
-                echo "$HOSTNAME: brick(s) present use force flag to continue anyway. Data will be lost if present"
+                echo "$HOSTNAME: brick(s) present use force flag (-f) to continue anyway. Data will be lost if present"
                 exit 0
         fi
 fi
@@ -81,12 +84,16 @@ if [[ ! $1 =~ ^-?[0-9]+$ ]];then
 fi
 }
 getspace() {
-unit=$(zfs list $POOL_NAME | awk NR==2'{print $3}')
-UNIT=${unit: -1}
-MAJOR=$(zfs list $POOL_NAME | awk  NR==2'{print $3}' | cut -d "." -f1)
-minor=$(zfs list $POOL_NAME | awk NR==2'{print $3}' | cut -d "." -f2)
-MINOR=${minor::-1}
-TOTAL_CAPACITY=$(( MAJOR*tib2kib + MINOR*gib2kib ))
+space=$(zfs list $POOL_NAME | awk NR==2'{print $3}')
+UNIT=${space: -1}
+SPACE=${space::-1}
+MAJOR=$(echo $SPACE | cut -d "." -f1)
+MINOR=$(echo $SPACE | cut -d "." -f2 -s )
+if [ "$UNIT" == "G" ];then
+	TOTAL_CAPACITY=$(( MAJOR*gib2kib + MINOR*mib2kib ))
+elif [ "$UNIT" == "T" ];then
+	TOTAL_CAPACITY=$(( MAJOR*tib2kib + MINOR*gib2kib ))
+fi
 padded=$(( TOTAL_CAPACITY*PADDING ))
 PADDED_CAPACITY=$(( padded/100 ))
 }
@@ -106,40 +113,42 @@ PADDED_CAPACITY=$capped
 }
 
 debug(){
-        echo "HOSTNAME=$HOSTNAME"
-        echo "POOL_NAME=$POOL_NAME"
-        echo "ARBITER_FLAG=$ARBITER_FLAG"
-        echo "ARBITER_SIZE=$ARBITER_SIZE"
-        echo "ARBITER_CAPACITY=$ARBITER_CAPACITY"
-        echo "CTDB_FLAG=$CTDB_FLAG"
-        echo "CTDB_SIZE=$CTDB_SIZE"
-        echo "CTDB_CAPACITY=$CTDB_CAPACITY"
-        echo "OVIRT_FLAG=$OVIRT_FLAG"
-        echo "OVIRT_SIZE=$OVIRT_SIZE"
-        echo "OVIRT_CAPACITY=$OVIRT_CAPACITY"
-        echo "VOLUME_BRICKS=$VOLUME_BRICKS"
-        echo "CAPACITY_UNIT=$UNIT"
-        echo "TOTAL_CAPACITY=$TOTAL_CAPACITY"
-        echo "MAJOR=$MAJOR"
-        echo "MINOR=$MINOR"
-        echo "PADDED_CAPACITY=$PADDED_CAPACITY"
-        echo "VOLUME_CAPACITY=$VOLUME_CAPACITY"
-        echo "OVERHEAD_CAPACITY=$OVERHEAD_CAPACITY"
-        echo "BRICK_CAPACITY=$BRICK_CAPACITY"
-        echo "MOUNTPOINT=$MOUNTPOINT"
-        echo "CAPPED_SIZE=$CAPPED_SIZE"
+        echo "HOSTNAME= $HOSTNAME"
+        echo "POOL_NAME= $POOL_NAME"
+        echo "ARBITER_FLAG= $ARBITER_FLAG"
+        echo "ARBITER_SIZE= $ARBITER_SIZE"
+        echo "ARBITER_CAPACITY= $ARBITER_CAPACITY"
+        echo "CTDB_FLAG= $CTDB_FLAG"
+        echo "CTDB_SIZE= $CTDB_SIZE"
+        echo "CTDB_CAPACITY= $CTDB_CAPACITY"
+        echo "OVIRT_FLAG= $OVIRT_FLAG"
+        echo "OVIRT_SIZE= $OVIRT_SIZE"
+        echo "OVIRT_CAPACITY= $OVIRT_CAPACITY"
+        echo "VOLUME_BRICKS= $VOLUME_BRICKS"
+        echo "CAPACITY_UNIT= $UNIT"
+        echo "TOTAL_CAPACITY= $TOTAL_CAPACITY"
+		echo "SPACE= $SPACE"
+        echo "MAJOR= $MAJOR"
+        echo "MINOR= $MINOR"
+        echo "PADDED_CAPACITY= $PADDED_CAPACITY"
+        echo "VOLUME_CAPACITY= $VOLUME_CAPACITY"
+        echo "OVERHEAD_CAPACITY= $OVERHEAD_CAPACITY"
+        echo "BRICK_CAPACITY= $BRICK_CAPACITY"
+        echo "MOUNTPOINT= $MOUNTPOINT"
+        echo "CAPPED_SIZE= $CAPPED_SIZE"
 }
 init(){
 tib2kib=1074000000
 gib2kib=1049000
+mib2kib=1024
 PADDING=90
 HOSTNAME=$(hostname -s)
 POOL_NAME=
 VOLUME_BRICKS=0
 BRICK_SIZE=""
 ARBITER_FLAG=0
-ARBITER_SIZE="500G" #500 Million Files
-ARBITER_CAPACITY=$(( 500*gib2kib ))
+ARBITER_SIZE="50G" #50 Million Files
+ARBITER_CAPACITY=$(( 50*gib2kib ))
 CTDB_FLAG=0
 CTDB_SIZE="2G"
 CTDB_CAPACITY=$(( 2*gib2kib ))
@@ -220,7 +229,6 @@ if [ $OVIRT_FLAG -eq 1 ];then
         zfs create $POOL_NAME/engine
         zfs set quota=$OVIRT_SIZE $POOL_NAME/engine
         mkdir $MOUNTPOINT$POOL_NAME/engine/brick
-        echo "$HOSTNAME:$MOUNTPOINT$POOL_NAME/engine/brick"
 fi
 if [ $CTDB_FLAG -eq 1 ];then
         OVERHEAD_CAPACITY=$(( OVERHEAD_CAPACITY + $CTDB_CAPACITY ))
