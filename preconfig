@@ -31,6 +31,8 @@ hostname=$(/bin/hostname)
 case $yumstatus in
 0)
         echo "All packages are up to date"
+        echo "Remove Old Kernels"
+        package-cleanup --oldkernels --count=1
         ;;
 *)
         number=$(cat $yumtmp | egrep '(.i386|.x86_64|.noarch|.src)' | wc -l)
