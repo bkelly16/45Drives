@@ -54,8 +54,8 @@ esac
 rm -f /tmp/yum-check-update
 }
 
-GTOOLS_VERSION=2.0
-RELEASE=18
+GTOOLS_VERSION=2.1
+RELEASE=1
 
 FORCE=""
 while getopts 'afghostz' OPTION; do
