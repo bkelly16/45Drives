@@ -7,10 +7,11 @@ Parses file /etc/gtools/vdev_id.conf to map a physical path to a device to a slo
 Then creates symlink in /dev/ to existing device symlinks ( /dev/1-1 -> /dev/sdb )  
 
 Directory can be changed from /dev/ by editing $ID_VDEV_PATH in "vdev_id"
+```
 	ex)
 	CHANGE->	echo "ID_VDEV_PATH=${ID_VDEV}" 
 	TO->		echo "ID_VDEV_PATH=disk/by-alias/${ID_VDEV}"
-
+```
 By default:
 CONFIG=/etc/gtools/vdev_id
 ID_VDEV_PATH=${ID_VDEV}
