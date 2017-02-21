@@ -24,7 +24,7 @@ INSTALL:
 	default in gtools is "/dev/disk/by-vdev"	
 
 EXAMPLE:
-'
+`
 # #
 # # Example vdev_id.conf - alias
 # #
@@ -32,7 +32,7 @@ EXAMPLE:
 # name     fully qualified or base name of device link
 # alias d1       /dev/disk/by-id/wwn-0x5000c5002de3b9ca
 # alias d2       wwn-0x5000c5002def789e
-'
+`
 NOTES:
 
 These udev_rules are unnecessary if using ZFS as they are already built in.
