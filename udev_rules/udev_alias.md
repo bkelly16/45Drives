@@ -12,10 +12,6 @@ Directory can be changed from /dev/ by editing $ID_VDEV_PATH in "vdev_id"
 	CHANGE->	echo "ID_VDEV_PATH=${ID_VDEV}" 
 	TO->		echo "ID_VDEV_PATH=disk/by-alias/${ID_VDEV}"
 ```
-By default:
-CONFIG=/etc/gtools/vdev_id
-ID_VDEV_PATH=${ID_VDEV}
-
 INSTALL:
 - Copy "69-vdev.rules" to "/usr/lib/udev/rules.d/"
 - Copy "vdev_id" to "/usr/lib/udev/"
@@ -37,6 +33,12 @@ EXAMPLE:
 NOTES:
 
 These udev_rules are unnecessary if using ZFS as they are already built in.
-By default zfs uses:
-CONFIG=/etc/zfs/vdev_id
-ID_VDEV_PATH/=disk/by-vdev/${ID_VDEV}
+```
+By default:
+	CONFIG=/etc/gtools/vdev_id
+	ID_VDEV_PATH=${ID_VDEV}
+
+ZFS uses:
+	CONFIG=/etc/zfs/vdev_id
+	ID_VDEV_PATH/=disk/by-vdev/${ID_VDEV}
+```
