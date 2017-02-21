@@ -19,6 +19,7 @@ INSTALL:
 - Define alias for each device
 - dmap & matching mapX script in gtools can be adapted for different ID_VDEV_PATH.
 	default in gtools is "/dev/disk/by-vdev"	
+- udevadm trigger
 
 EXAMPLE:
 ```
