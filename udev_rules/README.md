@@ -32,7 +32,7 @@ EXAMPLE:
 ```
 NOTES:
 
-These udev_rules are unnecessary if using ZFS as they are already built in.
+This is unnecessary if using ZFS as it's already built in.
 ```
 By default:
 	CONFIG=/etc/gtools/vdev_id
