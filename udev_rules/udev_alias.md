@@ -25,13 +25,13 @@ INSTALL:
 
 EXAMPLE:
 ```
-	# #
-	# # Example vdev_id.conf - alias
-	# #
-	# # by-vdev
-	# # name     fully qualified or base name of device link
-	# alias d1       /dev/disk/by-id/wwn-0x5000c5002de3b9ca
-	# alias d2       wwn-0x5000c5002def789e
+	#
+	# Example vdev_id.conf - alias
+	#
+	# by-vdev
+	# name     fully qualified or base name of device link
+	alias d1       /dev/disk/by-id/wwn-0x5000c5002de3b9ca
+	alias d2       wwn-0x5000c5002def789e
 ```
 NOTES:
 
