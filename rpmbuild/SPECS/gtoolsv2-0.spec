@@ -22,7 +22,7 @@ gtools v2.0. Tools used for administering a 45Drives Chassis
 %install
 install -m 0755 -d $RPM_BUILD_ROOT/opt/gtools/bin
 install -m 0755 -d $RPM_BUILD_ROOT/etc/gtools
-install -m 0755 bcreate $RPM_BUILD_ROOT/opt/gtools/bin/bcreate
+install -m 0755 datagen $RPM_BUILD_ROOT/opt/gtools/bin/datagen
 install -m 0755 dmap $RPM_BUILD_ROOT/opt/gtools/bin/dmap
 install -m 0755 gcreate $RPM_BUILD_ROOT/opt/gtools/bin/gcreate
 install -m 0755 linkedlist $RPM_BUILD_ROOT/opt/gtools/bin/linkedlist
@@ -56,7 +56,7 @@ echo "All done"
 
 %files
 %dir /etc/gtools/
-/opt/gtools/bin/bcreate
+/opt/gtools/bin/datagen
 /opt/gtools/bin/gcreate
 /opt/gtools/bin/dmap
 /opt/gtools/bin/linkedlist

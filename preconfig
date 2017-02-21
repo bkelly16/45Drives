@@ -6,15 +6,16 @@ NC='\033[0m'
 usage() {
         cat << EOF
 Usage:  preconfig
-                [-a] Install all relevant packages. Does not include Ovirt
-                [-g] Install GlusterFS3.8 Packages
-                [-o] Install Ovirt4.0 Packages
-                [-s] Install Samba and CTDB packages
-                [-t] Install automated tools
-                [-z] Istall ZFS packages
-                [-f] Do not prompt for install confirmation
-                [-h] Display this message
-
+	[-a] Install all relevant packages. Does not include Ovirt
+	[-g] Install GlusterFS3.8 Packages
+	[-o] Install Ovirt4.0 Packages
+	[-s] Install Samba and CTDB packages
+	[-t] Install automated tools
+	[-v] Verbose
+	[-z] Istall ZFS packages
+	[-f] Do not prompt for install confirmation
+	[-h] Display this message
+	
 EOF
         exit 0
 }
@@ -39,11 +40,13 @@ case $yumstatus in
         updates=$(cat $yumtmp | egrep '(.i386|.x86_64|.noarch|.src)')
         echo -e "There are $number updates available on host $hostname\n"
         #echo $updates
-        $yum update $FORCE
-        read -p "Reboot Required, reboot now? [Y/n]" op1
+		echo -e "Installing: updates"
+        $yum update $FORCE $QUIET_FLAG
+        read -p "Reboot Required, reboot now? [N/y] " op1
         case $op1 in
         y)
-                echo -e "Going down for reboot....\nRerun the same command to finish install $(basename "$0") $@"
+                echo -e "Reboot in 5 seconds\nRerun the same command after reboot to finish install $(basename "$0") $@"
+				sleep 5 
                 reboot
                 ;;
         *)
@@ -58,9 +61,14 @@ rm -f /tmp/yum-check-update
 
 GTOOLS_VERSION=2.1
 RELEASE=1
-
+GLUSTER_FLAG=no
+SAMBA_FLAG=no
+TOOLS_FLAG=no
+ZFS_FLAG=no
 FORCE=""
-while getopts 'afghostz' OPTION; do
+QUIET_FLAG="-q"
+
+while getopts 'afghostvz' OPTION; do
         case ${OPTION} in
         a)
                 GLUSTER_FLAG=yes
@@ -70,6 +78,7 @@ while getopts 'afghostz' OPTION; do
                 ;;
         f)
                 FORCE="-y"
+				QUIET_FLAG=""
                 ;;
         g)
                 GLUSTER_FLAG=yes
@@ -96,8 +105,6 @@ if [ $# -eq 0 ];then
 fi
 zfsrepo="http://download.zfsonlinux.org/epel/zfs-release"
 ovirtrepo="http://resources.ovirt.org/pub/yum-repo/ovirt-release40.rpm"
-#gdeploy="https://github.com/bkelly16/45Drives/raw/master/rpmbuild/RPMS/noarch/gdeploy-2.0.1-1.el7.centos.noarch.rpm"
-#gtools="https://github.com/bkelly16/45Drives/raw/master/rpmbuild/RPMS/noarch/gtools-2.0-16.noarch.rpm"
 repo="http://images.45drives.com"
 
 if [ -e /var/log/preconfig.log ];then
@@ -106,23 +113,24 @@ if [ -e /var/log/preconfig.log ];then
 else
         touch /var/log/preconfig.log
 fi
+rpm -qa | grep -qw yum-utils || yum install yum-utils $FORCE $QUIET_FLAG
 ##check for updates
 checkupdates
-## Required Packages
-rpm -qa | grep -qw kernel-devel-$(uname -r) || yum install kernel-devel $FORCE
-rpm -qa | grep -qw epel || yum install epel-release $FORCE
-rpm -qa | grep -qw pciutils-3 || yum install pciutils $FORCE
-rpm -qa | grep -qw vim-enhanced || yum install vim $FORCE
-rpm -qa | grep -qw ntp || yum install ntp $FORCE
+echo "Installing: Required Packages.."
+rpm -qa | grep -qw kernel-devel-$(uname -r) || yum install kernel-devel $FORCE $QUIET_FLAG
+rpm -qa | grep -qw epel || yum install epel-release $FORCE $QUIET_FLAG
+rpm -qa | grep -qw pciutils-3 || yum install pciutils $FORCE $QUIET_FLAG
+rpm -qa | grep -qw vim-enhanced || yum install vim $FORCE $QUIET_FLAG
+rpm -qa | grep -qw ntp || yum install ntp $FORCE $QUIET_FLAG
 
 ##disable selinux
 sed -ie 's/enforcing/disabled/g' /etc/selinux/config
 
 if [ "$ZFS_FLAG" == "yes" ];then
-        ## Install zfs
-        rpm -qa | grep -qw zfs-release || yum install $zfsrepo$(rpm -E %dist).noarch.rpm $FORCE
+        echo "Installing: ZFS"
+        rpm -qa | grep -qw zfs-release || yum install $zfsrepo$(rpm -E %dist).noarch.rpm $FORCE $QUIET_FLAG
         gpg --quiet --with-fingerprint /etc/pki/rpm-gpg/RPM-GPG-KEY-zfsonlinux
-        rpm -qa | grep -qw zfs-dkms || yum install zfs $FORCE
+        rpm -qa | grep -qw zfs-dkms || yum install zfs $FORCE $QUIET_FLAG
         if [ ! -d /etc/rc.modules ];then
                 touch /etc/rc.modules
         fi
@@ -137,31 +145,34 @@ if [ "$ZFS_FLAG" == "yes" ];then
         systemctl enable zfs-mount.service
 fi
 if [ "$GLUSTER_FLAG" == "yes" ];then
-        ## Install gluster repo,main,client,and server packages
-        rpm -qa | grep -q centos-release-gluster || yum install centos-release-gluster $FORCE
-        rpm -qa | grep -qw glusterfs-3 || yum install glusterfs $FORCE
-        rpm -qa | grep -qw glusterfs-fuse || yum install glusterfs-fuse $FORCE
-        rpm -qa | grep -qw glusterfs-server || yum install glusterfs-server $FORCE
-        rpm -qa | grep -qw glusterfs-geo-replication || yum install glusterfs-geo-replication $FORCE
+        echo "Installing: CentOS-GlusterFS Release,GlusterFS,Geo-Rep,FUSE Client,Server packages"
+        rpm -qa | grep -q centos-release-gluster || yum install centos-release-gluster $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw glusterfs-3 || yum install glusterfs $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw glusterfs-fuse || yum install glusterfs-fuse $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw glusterfs-server || yum install glusterfs-server $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw glusterfs-geo-replication || yum install glusterfs-geo-replication $FORCE $QUIET_FLAG
 fi
 if [ "$SAMBA_FLAG" == "yes" ];then
-        rpm -qa | grep -qw ctdb || yum install ctdb $FORCE
-        rpm -qa | grep -qw samba-common-4 || yum install samba-common $FORCE
-        rpm -qa | grep -qw samba-4 || yum install samba $FORCE
-        rpm -qa | grep -qw samba-winbind-clients || yum install samba-winbind-clients $FORCE
-        rpm -qa | grep -qw samba-client || yum install samba-client $FORCE
-        rpm -qa | grep -qw samba-vfs-glusterfs || yum install samba-vfs-glusterfs $FORCE
+		echo "Installing: CTDB - SAMBA - SAMBA GFS VFS"
+        rpm -qa | grep -qw ctdb || yum install ctdb $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw samba-common-4 || yum install samba-common $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw samba-4 || yum install samba $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw samba-winbind-clients || yum install samba-winbind-clients $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw samba-client || yum install samba-client $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw samba-vfs-glusterfs || yum install samba-vfs-glusterfs $FORCE $QUIET_FLAG
 fi
 if [ "$TOOLS_FLAG" == "yes" ];then
-        rpm -qa | grep -qw ansible || yum install ansible $FORCE
-        rpm -qa | grep -qw gdeploy || yum install "$repo"/gtools/gdeploy-2.0.1-1.el7.centos.noarch.rpm $FORCE
-        rpm -qa | grep -qw gtools || yum install "$repo"/gtools/gtools-"$GTOOLS_VERSION"-"$RELEASE".noarch.rpm $FORCE
+		echo "Installing: Cluster Config Tools gtools, gdeploy"
+        rpm -qa | grep -qw ansible || yum install ansible $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw gdeploy || yum install "$repo"/gtools/gdeploy-2.0.1-1.el7.centos.noarch.rpm $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw gtools || yum install "$repo"/gtools/gtools-"$GTOOLS_VERSION"-"$RELEASE".noarch.rpm $FORCE $QUIET_FLAG
 fi
 if [ "$OVIRT_FLAG" == "yes" ];then
-        rpm -qa | grep -qw ovirt-release40 || yum install $ovirtrepo $FORCE
-        rpm -qa | grep -qw ovirt-hosted-engine-setup || yum install ovirt-hosted-engine-setup $FORCE
-        rpm -qa | grep -qw vdsm-gluster || yum install vdsm-gluster $FORCE
-        rpm -qa | grep -qw screen || yum install screen $FORCE
+		echo "Installing: Ovirt 4.0 packages"
+        rpm -qa | grep -qw ovirt-release40 || yum install $ovirtrepo $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw ovirt-hosted-engine-setup || yum install ovirt-hosted-engine-setup $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw vdsm-gluster || yum install vdsm-gluster $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw screen || yum install screen $FORCE $QUIET_FLAG
 fi
 
 echo -e "All Done...\nVerifying Install..."
