@@ -90,7 +90,7 @@ elif [ ${#offlinedev[@]} -gt 0 ];then
         echo "WARNING:$(zpool status -x $POOL_NAME | grep status | awk NR==1 | cut -d ":" -f2)"
         printf '%s\n' "${offlinedev[@]}"
         exit 1
-elif [ ${#getunavailable[@]} -gt 0 || ${#getfaulted[@]} -gt 0 ];then
+elif [ ${#getunavailable[@]} -gt 0 ] || [ ${#getfaulted[@]} -gt 0 ];then
         echo "CRITICAL:$(zpool status -x $POOL_NAME | grep status | awk NR==1 | cut -d ":" -f2)"
         printf '%s\n' "${unavaildev[@]}"
         exit 2
