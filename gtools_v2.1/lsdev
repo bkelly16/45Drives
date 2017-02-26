@@ -28,7 +28,7 @@ line() { # takes a number as first input Length, and any character as second inp
 
 setBAYstatus() {
 	
-	partcount=$(ls /dev/disk/by-vdev/ | grep -w ${BAY[$1]} | wc -l)
+	partcount=$((ls /dev/disk/by-vdev/ | grep -w ${BAY[$1]} | wc -l) 2>/dev/null)
 	# If $partcount = : 
 	# 0 = Empty slot
 	# 1 = Blank Disk
