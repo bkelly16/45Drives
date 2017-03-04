@@ -5,7 +5,7 @@ DISK_CONTROLLER=$2
 
 usage(){
 	cat << EOF
-Usage: ./map_lsi CHASSIS CONTROLLER_ID 
+Usage: mapSAS2116 CHASSIS CONTROLLER_ID 
 
 EOF
 	exit 0
