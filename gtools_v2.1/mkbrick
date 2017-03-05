@@ -13,6 +13,7 @@ Usage:  mkbrick -n {POOL_NAME}
 		Syntax is XXX.YYY (TiB.GiB)
 		ex) 7 TiB and 500 GiB would be 7.500 
 		Default is to use 100% of available
+	[-q] Quiet flag
 	[-h] Print this message
 	
 EOF
@@ -20,8 +21,9 @@ EOF
 }
 check4pool() {
 if [ -z $POOL_NAME ];then
-        echo "Pool name required"
-        exit 1
+		echo "Pool(s) in System: "
+		zpool list -o name,size,health -H
+		read -p "Which pool to use? " POOL_NAME
 else
         zpool list | grep -w "$POOL_NAME" &>/dev/null
         if [ $? -eq 1 ];then
@@ -43,12 +45,27 @@ fi
 zfs list | grep "$POOL_NAME/" &>/dev/null
 if [ $? -eq 0 ];then
         if [ "$FORCE" == "yes" ];then
-                :
+				for b in $POOL_NAME/vol*;do
+					deletebrick
+				done
         else
                 echo "$HOSTNAME: brick(s) present use force flag (-f) to continue anyway. Data will be lost if present"
                 exit 0
         fi
 fi
+}
+deletebrick() {
+	dir=$(pwd)
+	cd /
+	for b in $POOL_NAME/*;do
+		zfs destroy -rf $b 2>/dev/null 
+		if [ "$QUIET_FLAG" == "yes" ];then
+			:
+		else
+			echo "Destroyed brick: $b"
+		fi
+	done
+	cd $dir
 }
 check4input() {
 if [ $ARBITER_FLAG -eq 0 ];then
@@ -163,7 +180,7 @@ CAPPED_SIZE=0
 
 init
 
-while getopts 'Ab:Cdfm:n:Os:h' OPTION; do
+while getopts 'Ab:Cdfm:n:Os:qh' OPTION; do
         case ${OPTION} in
         A)
                 ARBITER_FLAG=1
@@ -202,14 +219,14 @@ while getopts 'Ab:Cdfm:n:Os:h' OPTION; do
                 CAP_FLAG=1
                 CAPPED_SIZE=${OPTARG}
                 ;;
+		q)
+				QUIET_FLAG=yes
+				;;
         h)
                 usage
                 ;;
         esac
 done
-if [ $# -eq 0 ];then
-        usage
-fi
 
 ## CHECK FOR POOL THEN FOR BRICKS
 check4pool
@@ -256,6 +273,11 @@ until [ $i -eq $VOLUME_BRICKS ];do
         let i=i+1
         let j=j+1
 done
+if [ "$QUIET_FLAG" == "yes" ];then
+	:
+else
+	zfs list $POOL_NAME -r -o name,avail,mountpoint
+fi
 
 if [ "$DEBUG_FLAG" == "yes" ];then
         debug
