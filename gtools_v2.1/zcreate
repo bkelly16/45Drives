@@ -208,8 +208,21 @@ getdrives
 if [ "$DESTROY_FLAG" == "yes" ];then
 	echo "Destroying $ZPOOL_NAME, You Sure?"
 	pause
-	zpool destroy $ZPOOL_NAME
-	exit 0
+	read -p "ALL data will be lost. Continue?(y/N)" del
+	case $del in
+		y)
+			zpool destroy $ZPOOL_NAME
+			exit 0
+			;;
+		*)
+			echo "pool destroyed..All data deleted.."
+			pause
+			echo "Nah just fucking with ya"
+			pause
+			zpool status $ZPOOL_NAME
+			exit 0
+			;;
+	esac
 fi
 # If no user input for DRIVE_COUNT then DRIVE_COUNT is eqaul to the number of elements in the DRIVES array
 if [ $DRIVE_COUNT -eq 0 ];then
