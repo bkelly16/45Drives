@@ -16,7 +16,18 @@ EOF
 gethba() {
 	case $1 in
 	R750|r750|r)
-		DISK_CONTROLLER=$R750
+		read -p "r750 or r3740? " highpoint
+		r750)
+			DISK_CONTROLLER=$R750
+			;;
+		r3740A)
+			DISK_CONTROLLER=$R3740
+			;;
+		*)
+			echo "Didnt catch that try again"
+			exit 1
+			;;
+		esac
 		;;
 	LSI|lsi|l)
 		read -p "9305 or 9201? " lsi
@@ -85,7 +96,7 @@ LSI_9201="2116"
 LSI_9305="3224"
 ASR="Adaptec"
 HBA1000="Adaptec Series 8"
-RR3740="3740"
+R3740="3740"
 DISK_CONTROLLER=
 CHASSIS=
 QUIET=no
