@@ -15,8 +15,9 @@ EOF
 }
 gethba() {
 	case $1 in
-	R750|r750|r)
-		read -p "r750 or r3740? " highpoint
+	R750|r750|r|r3740|R3740)
+		read -p "r750 or r3740? " hpt
+		case $hpt in
 		r750)
 			DISK_CONTROLLER=$R750
 			;;
@@ -58,9 +59,6 @@ gethba() {
 			exit 1
 			;;
 		esac
-		;;
-	rr3740|rr)
-		DISK_CONTROLLER=$RR3740
 		;;
 	*)
 		echo "Unsupported controller, try configurating manually"
