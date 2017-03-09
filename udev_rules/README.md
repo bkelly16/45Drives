@@ -16,7 +16,7 @@ INSTALL:
 - Copy "69-vdev.rules" to "/usr/lib/udev/rules.d/"
 - Copy "vdev_id" to "/usr/lib/udev/"
 - Create "/etc/gtools/vdev_id.conf" 
-- Define alias for each device
+- Define alias for each device using /dev/disk/by-path/ names
 - dmap & matching mapX script in gtools can be adapted for different ID_VDEV_PATH.
 	default in gtools is "/dev/disk/by-vdev"	
 - udevadm trigger
@@ -28,8 +28,9 @@ EXAMPLE:
 	#
 	# by-vdev
 	# name     fully qualified or base name of device link
-	alias d1       /dev/disk/by-id/wwn-0x5000c5002de3b9ca
-	alias d2       wwn-0x5000c5002def789e
+	alias d1	/dev/disk/by-id/wwn-0x5000c5002de3b9ca
+	alias d2	wwn-0x5000c5002def789e
+	alias 1-10	/dev/disk/by-path/pci-0000:05:00.0-scsi-0:0:10:0
 ```
 NOTES:
 
