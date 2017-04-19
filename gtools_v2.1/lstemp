@@ -120,6 +120,23 @@ k=$(expr $i + $WIDTH + $WIDTH) # 3rd row offset i by 2 widths
 l=$(expr $i + $WIDTH + $WIDTH + $WIDTH) # 4th row, offset by 3 widths
 
 case $BAYS in
+15)
+	#30unit
+
+	line 24 _
+	while [ $i -lt $WIDTH ];do
+		i_=$(expr $WIDTH_ - $i ) # invert counter for first row
+		setBAYtemp $i_
+		#setBAYstatus $j
+		printf "| %s |\n" "${BAYSTATUS[$i_]}" #displays drives in a snake pattern 
+		#printf "| %-7s | %-7s | %-7s |\n" ${BAY[$i]} ${BAY[$j]} ${BAY[$k]}
+		let i=i+1
+		let j=j+1
+	done
+	line 24 -
+	printf "| %-5s |\n" ROW1
+	line 24 =
+	;;
 30)
 	#30unit
 

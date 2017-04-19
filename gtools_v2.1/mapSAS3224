@@ -72,6 +72,12 @@ DRIVE_COUNT=4
 echo "# by-vdev" >> /etc/zfs/vdev_id.conf
 echo "# name     fully qualified or base name of device link" >> /etc/zfs/vdev_id.conf
 case $CHASSIS in
+15)
+	CARD1=$(lspci | grep $DISK_CONTROLLER | awk 'NR==1{print $1}')
+	read_card 1 $CARD1
+	echo "$(head -n -1 /etc/zfs/vdev_id.tmp)" >> /etc/zfs/vdev_id.conf
+	rm -f /etc/zfs/vdev_id.tmp
+	;; 
 30)
 	CARD1=$(lspci | grep $DISK_CONTROLLER | awk 'NR==1{print $1}')
 	CARD2=$(lspci | grep $DISK_CONTROLLER | awk 'NR==2{print $1}')		
