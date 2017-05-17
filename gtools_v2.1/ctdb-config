@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# ctdb-config
+# DESCRIPTION OF FUNCTION
+
+# Copyright 2017, Brett Kelly <bkelly@45drives.com>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+usage() { 
+        cat << EOF
+Usage: ctdb-config
+		[-]options
+EOF
+        exit 0
+}
+
+getNIC() {
+
+for n in $(ls $NICdir); 
+do
+	if [ -d $NICdir$n ] && [ "$n" != "lo" ];then
+		NIC+=("$n")
+	fi
+done
+}
+getLINKSTATE() {
+nic=$1;
+LINKSTATE+=$(ethtool $nic | grep "Link detected:" | cut -d ":" -f2)
+}
+
+debug() {
+echo "NIC	:" ${NIC[*]}
+echo "STATE	:" ${LINKSTATE[*]}
+}
+
+# CONFIG
+NICdir="/sys/class/net/"
+
+#MAIN
+getNIC
+for n in ${NIC[*]};do
+	getLINKSTATE $n
+done	
+
+## automatic as possible
+# write it to configure ctdb locally on one node. So it would have to be run on each node separtly. Not as convient This is best should nodes have differnet hardware. could be intergatred into a pupput install easier
+
+
+## Confiure CTDB config file
+#prompt for each option
+#echo into /etc/sysconfig/
+# Set CTDB option to allow for subdirctorys of gluster volume to be shared vai SMB and VFS by default
+
+## Configure nodes file
+# read host files ask for verifictaion
+
+## Configure public Addresses file
+# guess based on ports up, ask for use rpsecifed VIP(s)
+# Should support mulitple ips
+
+#IF SMB_FLAG =yes
+## Configure SMB as to get share up at minimum
+#  
+
+#IF NFS_FLAG =yes
+
+# HAVE SOME SORT OF VERIFCATION. (try to emulate testparm)
+#-CHECK THAT EACH FILE IS EXISTS
+#-CHECK FOR LOCKFILE
+#....
+
+# IF passed verifatcion say good to go and offer to start service or to do it later theselves and go in for fine tuning (i,e failover options, )
+
+debug
