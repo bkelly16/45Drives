@@ -2,7 +2,7 @@
 
 # ctdb-config
 # generates ctdb config files based on user input.
-# required shared storage mounted permentaly on each node
+# required shared storage mounted permanently on each node
  
 
 # Copyright 2017, Brett Kelly <bkelly@45drives.com>
