@@ -103,7 +103,7 @@ done
 if [ $# -eq 0 ];then
         usage
 fi
-zfsrepo="http://download.zfsonlinux.org/epel/zfs-release"
+zfsrepo="http://download.zfsonlinux.org/epel/zfs-release.el7_4.noarch.rpm"
 ovirtrepo="http://resources.ovirt.org/pub/yum-repo/ovirt-release40.rpm"
 repo="http://images.45drives.com"
 
@@ -128,7 +128,7 @@ sed -ie 's/enforcing/disabled/g' /etc/selinux/config
 
 if [ "$ZFS_FLAG" == "yes" ];then
         echo "Installing: ZFS"
-        rpm -qa | grep -qw zfs-release || yum install $zfsrepo$(rpm -E %dist).noarch.rpm $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw zfs-release || yum install $zfsrepo $FORCE $QUIET_FLAG
         gpg --quiet --with-fingerprint /etc/pki/rpm-gpg/RPM-GPG-KEY-zfsonlinux
         rpm -qa | grep -qw zfs-dkms || yum install zfs $FORCE $QUIET_FLAG
         if [ ! -d /etc/rc.modules ];then
