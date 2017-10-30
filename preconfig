@@ -60,7 +60,7 @@ rm -f /tmp/yum-check-update
 }
 
 GTOOLS_VERSION=2.1
-RELEASE=1
+RELEASE=2
 GLUSTER_FLAG=no
 SAMBA_FLAG=no
 TOOLS_FLAG=no
