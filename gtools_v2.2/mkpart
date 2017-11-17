@@ -1,0 +1,96 @@
+#!/bin/bash
+# ---------------------------------------------------------------------------
+
+# Copyright 2017, Brett Kelly <bkelly@45drives.com>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+usage() { # Help
+        cat << EOF
+Usage:	moses
+	[-c] Maunally select drives
+	[-h] Displays this message
+EOF
+        exit 0
+}
+pause(){ # Waits for user input to continue
+read -p "Press any to continue $1" con
+case $con in
+*)
+	;;
+esac
+}
+getbays() { # Fills array BAYS with physical slot number, whether there is a drive present or not (creates array of all drive slots, wheter a is drive present or not)
+	i=0
+	j=3
+	BAYS=$((cat /etc/zfs/vdev_id.conf| awk "NR>2" | wc -l) 2>/dev/null)
+	while [ $i -lt $BAYS ];do
+		bay=$(cat /etc/zfs/vdev_id.conf | awk -v j=$j 'NR==j{print $2}')
+		BAY[$i]=$bay
+		let i=i+1
+		let j=j+1
+	done
+}
+getdrives() { # For each DRIVE in BAY, check if it is a block device. If true add to DRIVES array (excludes empty drive slots)
+	DRIVES=()
+	for DRIVE in ${BAY[*]};do
+		if [ -b /dev/disk/by-vdev/$DRIVE ];then
+			DRIVES+=( "$DRIVE" )
+		fi
+	done
+}
+customsort() { # Sorts drives per VDEV based on user input and saves each as a newline in z.tmp
+	lsdev
+	read -p "Which Drives to Partition? " VDEV_COUNT
+	while [ $i -lt $VDEV_COUNT ];do
+		read -p "VDEV_$i: " VDEV
+		echo $VDEV >> $DIR/z.tmp
+		let i=i+1
+	done
+	if [ $BUILD_FLAG == no ];then
+		pause "building pool"
+		BUILD_FLAG=yes
+	fi
+}
+partdrives() {
+	for disk in ${DRIVES[*]};do
+		echo $disk
+		wipefs -a /dev/disk/by-vdev/$disk > /dev/null
+		parted /dev/disk/by-vdev/$disk --script mklabel gpt
+		parted -a optimal /dev/disk/by-vdev/$disk --script mkpart primary 1 100%
+	done
+}
+checkroot(){
+	SCRIPT_NAME=$(basename "$0")
+	if [ "$EUID" -ne 0 ];then
+		echo "Permission Denied. Are you Root?"
+		exit 0
+	fi
+}
+
+while getopts 'ch' OPTION; do
+	case ${OPTION} in
+	c)
+		CUSTOM_FLAG=yes
+		;;
+	h)
+		usage
+		;;
+	esac
+done
+
+
+checkroot
+if [ ! -e /etc/zfs/vdev_id.conf ];then
+	echo -e "/etc/zfs/vdev_id.conf does not exist.\nUse dmap to configure drive alias first"
+	exit 0
+fi
+
+getbays
+getdrives
+partdrives
+
+#lsblk

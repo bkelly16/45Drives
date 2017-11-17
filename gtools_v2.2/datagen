@@ -1,0 +1,81 @@
+#!/bin/bash
+
+usage() { # Help
+        cat << EOF
+Usage:  datagen
+                [-h] Displays this message
+EOF
+        exit 0
+}
+wdata() {
+BLOCK_SIZE=$1
+COUNT=$2
+iter=$3
+EXT=$4
+NAME=init/file
+FILE="$MOUNT_POINT$NAME-$BLOCK_SIZE-$iter$EXT"
+if [ ! -d "$MOUNT_POINT/init" ];then
+        mkdir $MOUNT_POINT/init
+fi
+echo $FILE
+#( dd if=/dev/urandom of=$FILE bs=$BLOCK_SIZE count=$COUNT ) > /dev/null
+( dd if=<(openssl enc -aes-256-ctr -pass pass:"(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" \
+	-nosalt < /dev/zero) \
+	of=$FILE bs=$BLOCK_SIZE count=$COUNT iflag=fullblock > /dev/null )2>/dev/null
+}
+debug() {
+        cat << EOF
+        MOUNT_POINT=$MOUNT_POINT
+        BLOCK_SIZE=$BLOCK_SIZE
+        COUNT=$COUNT
+        iter=$iter
+        EXT=$EXT
+EOF
+}
+MOUNT_POINT=
+C=1
+while getopts 'c:d:m:h' OPTION;do
+        case ${OPTION} in
+        m)
+                mp=${OPTARG}
+                if [ "${mp: -1}" != "/" ];then
+					MOUNT_POINT="$mp/"
+				else
+					MOUNT_POINT=$mp
+				fi
+				if [ ! -d "$MOUNT_POINT" ];then
+					echo "Mountpoint does not exist"
+					exit 1
+				fi
+                ;;
+        c)
+                C=${OPTARG}
+                ;;
+		d)
+				D=${OPTARG}
+				;;
+        h)
+                usage
+                ;;
+        esac
+done
+if [ $# -eq 0 ];then
+        echo "input required"
+        exit 1
+fi
+if [ -z $MOUNT_POINT ];then
+        echo "mount point required"
+        exit 1
+fi
+
+i=0
+while [ $i -lt $C ];do
+        wdata 64k 32 $i .docx
+        let i=i+1
+done
+i=0
+while [ $i -lt $C ];do
+        wdata 1M 5000 $i .iso
+        let i=i+1
+done
+#debug

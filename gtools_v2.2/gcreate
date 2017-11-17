@@ -1,0 +1,310 @@
+#!/bin/bash
+# ---------------------------------------------------------------------------
+# gcreate - Gluster Volume creation tool
+
+# Copyright 2016, Brett Kelly <bkelly@45drives.com>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+pause(){ # Waits for user input to continue
+read -p "$1" con
+case $con in
+yes|y)
+	;;
+*)
+	exit 0
+	;;
+esac
+}
+usage() { # Help
+        cat << EOF
+Usage:	zcreate
+		[-b] Specify Brick Count
+		[-f] Force flag, overwite bricks if already present
+		[-N] Volume name
+		[-n] Specify nodes in trusted pool
+			- For each node you must use a sperate -n flag 
+			- gcreate -n node1 -n node2 -n node3
+		[-p] Specify zpool name. Only neccesary if multiple pools
+		[-r] Replica count (linked list only)
+		[-v] Volume Type
+			Options: "linkedlist", "dist"
+		[-s] Stop & delete Volume
+		[-z] Reset gluster config files on each node specified
+		[-h] Displays this message
+
+EOF
+	exit 0
+}
+pingcheck() { # if not in host file exlcude, if unresponsive exclude
+for node in ${NODES[*]};do
+	if [ -z "$(cat /etc/hosts | grep $node)" ];then
+		echo "$node not present in /etc/hosts -- excluding"
+		EXCLUDE+=("$node")
+	elif ping -c 1 -W 1 $node >/dev/null; then
+		:
+	else
+		echo "$node unresponsive -- excluding"
+		EXCLUDE+=("$node")
+	fi
+done
+for del in ${EXCLUDE[*]};do
+	NODES=("${NODES[@]/$del/}")
+done
+}
+checkglusterd() {
+check=$(ssh root@$1 systemctl status glusterd | awk 'NR==3{print $2}')
+if [ "$check" != "active" ];then
+	echo -e "Starting gluster service on $1"
+	ssh root@$1 systemctl restart glusterd
+	ssh root@$1 systemctl enable glusterd
+fi
+}
+gfirewall()	{
+for node in ${NODES[*]};do
+	fwcheck=$(ssh root@$node firewall-cmd --permanent --zone=public --list-ports | grep 24007-24008| awk '{print $1}')
+	if [ -z "$fwcheck" ];then
+		echo -e "$1 ports 24007,24008 in firewall on $node\n(Gluster Daemon, Gluster Management)"
+		ssh root@$node firewall-cmd --permanent --zone=public --$1-port=24007-24008/tcp 
+		ssh root@$node firewall-cmd --reload
+	fi
+done
+}
+peerprobe()	{
+for node in ${NODES[*]}; do
+	PEER_CHECK=$(gluster peer status | grep $node)
+	if [ "$node" != "$WORKING_NODE" ] && [ -z "$PEER_CHECK" ] ; then
+		gluster peer probe $node 
+	fi
+done
+}
+peerdetach() {
+for node in ${NODES[*]}; do
+	PEER_CHECK=$(gluster peer status | grep $node)
+	if [ "$node" != "$WORKING_NODE" ] && [ -z "$PEER_CHECK" ] ; then
+		gluster peer detach $node 
+	fi
+done
+}
+resetgfs() {
+	pause "Are you sure? This will completely reset all gluster config files ? (yes/no) " 
+	for node in ${NODES[*]};do
+		ssh root@$node systemctl stop glusterd;
+		ssh root@$node rm -rf /var/lib/glusterd/;
+		ssh root@$node systemctl restart glusterd
+	done
+}
+bcheck() {
+	if [ $(($1%2)) -eq 0 ];then
+		:
+	else
+		echo -e "Bricks must be an even number for a Replicated Volume"
+		exit 0
+	fi
+}
+checkroot(){
+	SCRIPT_NAME=$(basename "$0")
+	if [ "$EUID" -ne 0 ];then
+		echo "You must have root privileges to run $SCRIPT_NAME"
+		exit 0
+	fi
+}
+bfirewall(){
+	brick=$(expr $BRICK_COUNT - 1)
+	fport=$((gluster vol status $VOLUME_NAME | awk 'NR==4{print $3}')2>/dev/null )
+	lport=$(expr $fport + $brick)
+	for node in ${NODES[*]};do
+		echo -e "$1ing ports $fport-$lport in firewall on $node"
+		ssh root@$node firewall-cmd --permanent --zone=public --$1-port=$fport-$lport/tcp
+		ssh root@$node firewall-cmd --reload
+	done
+}
+readgvirt(){
+	if [ -z /etc/gtools/gvirt.conf ];then
+		echo "/etc/gtools/gvirt.conf is not present"
+		exit 1
+	fi
+	length=$(cat /etc/gtools/gvirt.conf | wc -l)
+	i=1
+	while [ $i -lt "$((length + 1))" ];do
+		temp=("$(cat /etc/gtools/gvirt.conf | awk -v line=$i NR==line'{print $1}')" "$(cat /etc/gtools/gvirt.conf | awk -v line=$i NR==line'{print $2}')")
+		VIRT_TUNES+=("${temp[@]}")
+		let i=i+1
+	done
+}
+
+checkroot
+BRICK_COUNT=2
+BRICK_FLAG=no
+VOLUME_NAME=tank
+WORKING_NODE=$(hostname -s)
+PEERS=()
+NODES=("$WORKING_NODE")
+REPLICA=2
+VOLUME_TYPE=""
+RESET=no
+FORCE=no
+POOL_NAME=$(zfs list | awk 'NR==2{print $1}')
+STOP_FLAG=no
+VIRT_FLAG=no
+
+while getopts 'b:c:fn:N:pr:sv:Vhz' OPTION; do
+	case ${OPTION} in
+	b)
+		BRICK_FLAG=yes
+		BRICK_COUNT=${OPTARG}
+		;;
+	c)
+		CONFIG_FLAG=yes
+		CONFIG=${OPTARG}
+		;;
+	f)
+		FORCE=yes
+		;;
+	N)
+		VOLUME_NAME=${OPTARG}
+		;;
+	n)
+		PEERS+=("$OPTARG")
+		NODES=("$WORKING_NODE" "${PEERS[*]}")
+		;;
+	p)
+		POOL_NAME=${OPTARG}
+		;;
+	r)
+		REPLICA=${OPTARG}
+		;;
+	v)
+		VOLUME_TYPE=${OPTARG}
+		;;
+	V)
+		VIRT_FLAG=yes
+		;;
+	s)
+		STOP_FLAG=yes
+		;;
+	z)
+		RESET=yes
+		;;
+	h)
+		usage
+		;;
+	esac
+done
+
+#Verify nodes, exclude from NODES array if down or not in hosts file
+pingcheck
+#reset gfs if reset flag set. deletes all config files in /var/lib/glusterd/
+if [ "$RESET" == "yes" ];then
+	echo ${NODES[*]}
+	#peerdetach
+	resetgfs
+	exit 0
+fi
+if [ "$STOP_FLAG" == "yes" ];then
+	gcheck=$(gluster vol info | grep "Volume Name" | awk -F: '{print $2}')
+	if [ -z "$gcheck" ];then
+		echo "No Volumes to stop"
+		exit 0
+	else
+		gluster volume list
+		echo "Stopping: $VOLUME_NAME"
+		bfirewall remove
+		gluster volume stop $VOLUME_NAME
+		gluster volume delete $VOLUME_NAME
+		exit 0
+	fi
+fi
+# Open firewall ports for glusterfs management & daemon (24007-24008)
+gfirewall add
+# Start Gluster services on each node
+for n in ${NODES[*]};do
+	checkglusterd $n
+done
+# Probe clusters peers  
+peerprobe
+
+if [ "$CONFIG_FLAG" == "yes" ];then
+	VOLUME_NAME=$(cat $CONFIG | awk NR==1'{print $4}' )
+	systemctl restart glusterd
+	for peer in ${PEERS[*]};do
+		ssh root@$peer systemctl restart glusterd
+	done
+	sleep 4
+	cat $CONFIG | /bin/sh
+	gluster volume info $VOLUME_NAME
+	echo
+	gluster volume start $VOLUME_NAME
+	echo
+	bfirewall add
+	exit 0
+fi
+#Bricks
+if [ "$VOLUME_TYPE" == "linkedlist" ];then
+	if [ "${#NODES[@]}" -lt 2 ];then
+		echo "Minimum of two servers needed for Linked List"
+	fi
+	bcheck $BRICK_COUNT
+fi
+if [ "$BRICK_FLAG" == "yes" ];then
+	for n in ${NODES[*]};do
+		check=$(ssh root@$n "zfs list | grep vol | wc -l") 
+		if [ "$FORCE" == "yes" ];then
+			:
+		elif [ $check -gt 0 ];then
+			echo "$WORKING_NODE: bricks present use force flag to delete"
+			exit 0
+		fi
+		ssh root@$n "/opt/gtools/bin/bcreate $BRICK_COUNT $POOL_NAME $FORCE"
+	done
+fi
+# Create Volume
+case $VOLUME_TYPE in
+	linkedlist)
+		systemctl restart glusterd
+		t1=("/opt/gtools/bin/linkedlist -b $BRICK_COUNT -N $VOLUME_NAME")
+		for peer in ${PEERS[*]};do
+			ssh root@$peer systemctl restart glusterd
+			t2+=("-n $peer")
+		done
+		$t1 ${t2[*]}
+		sleep 4
+		create=$(cat /etc/gtools/g.conf)
+		$create
+		gluster volume info $VOLUME_NAME
+		echo
+		gluster volume start $VOLUME_NAME
+		echo
+		bfirewall add
+		;;
+	dist)
+		systemctl restart glusterd
+		t1=("/opt/gtools/bin/dist -b $BRICK_COUNT -N $VOLUME_NAME")
+		for peer in ${PEERS[*]};do
+			ssh root@$peer systemctl restart glusterd
+			t2+=("-n $peer")
+		done
+		$t1 ${t2[*]}
+		sleep 4
+		create=$(cat /etc/gtools/g.conf)
+		$create
+		gluster volume info $VOLUME_NAME
+		echo
+		gluster volume start $VOLUME_NAME
+		echo
+		bfirewall add
+		;;
+esac
+if [ "$VIRT_FLAG" == "yes" ];then
+	echo "yes"
+	readgvirt
+	for option in ${VIRT_TUNES[*]};do
+		echo "gluster volume set $VOLUME_NAME $option"
+		#gluster volume set $VOLUME_NAME $option
+	done
+fi
+	
+	

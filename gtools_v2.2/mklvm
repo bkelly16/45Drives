@@ -1,0 +1,38 @@
+#!/bin/bash
+
+usage() {
+        cat << EOF
+Usage:  NAME
+	[-h] Print this message
+EOF
+        exit 0
+}
+while getopts 'h' OPTION; do
+        case ${OPTION} in
+        h)
+                usage
+                ;;
+        esac
+done
+
+
+
+
+
+
+#while i < $BRICK_COUNT;do
+#	pvcreate /dev/$ZPOOL/brick$i
+#	ZVOLS=+(/dev/$ZPOOL/vol$i)
+#	let i=i+1
+#done
+
+#vgcreate $VG $ZVOLS
+
+while i < $BRICK_COUNT;do
+	PV_EXTENT=$(pvdisplay /dev/$ZPOOL/brick$i | grep "Total PE" | awk '{print $3}')
+	META_EXTENT=4000
+	DATA_EXTENT=$(($PV_EXTENT - $META_EXTENT))
+	lvcreate -l$META_EXTENT -n meta$i $VG /dev/$ZPOOL/brick$i
+	lvcreate -l$DATA_EXTENT -n data$i $VG /dev/$ZPOOL/brick$i
+	let i=i+1
+done
