@@ -7,7 +7,7 @@ usage() {
         cat << EOF
 Usage:  preconfig
 	[-a] Install all relevant packages. Does not include Ovirt
-	[-g] Install GlusterFS3.8 Packages
+	[-g] Install GlusterFS Packages
 	[-o] Install Ovirt4.0 Packages
 	[-s] Install Samba and CTDB packages
 	[-t] Install automated tools
