@@ -19,6 +19,7 @@ Usage:  mkbrick -n {POOL_NAME}
 	[-b] Specify number of bricks
 	[-f] Force flag, rmeove bricks if present
 	[-m] Alternate mountpoint
+	[-p] Set padding % [1-100]. Default is 90
 	[-s] Specify total size.
 		Syntax is XXX.YYY (TiB.GiB)
 		ex) 7 TiB and 500 GiB would be 7.500 
@@ -163,6 +164,7 @@ debug(){
         echo "BRICK_CAPACITY= $BRICK_CAPACITY"
         echo "MOUNTPOINT= $MOUNTPOINT"
         echo "CAPPED_SIZE= $CAPPED_SIZE"
+	echo "PADDING= $PADDING"
 }
 init(){
 tib2kib=1074000000
@@ -190,7 +192,7 @@ CAPPED_SIZE=0
 
 init
 
-while getopts 'Ab:Cdfm:n:Os:qh' OPTION; do
+while getopts 'Ab:Cdfm:n:Op:s:qh' OPTION; do
         case ${OPTION} in
         A)
                 ARBITER_FLAG=1
@@ -225,6 +227,9 @@ while getopts 'Ab:Cdfm:n:Os:qh' OPTION; do
         n)
                 POOL_NAME=${OPTARG}
                 ;;
+	p)
+		PADDING=${OPTARG}
+		;;
         s)
                 CAP_FLAG=1
                 CAPPED_SIZE=${OPTARG}
@@ -242,7 +247,12 @@ done
 check4pool
 check4brick
 ## Prompt for config options if not specified
-check4input
+if [ "$QUIET_FLAG" == "yes" ];then
+	:
+else
+	check4input
+fi
+
 
 getspace
 if [ $CAP_FLAG -eq 1 ];then

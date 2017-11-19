@@ -24,54 +24,41 @@ EOF
 }
 gethba() {
 	case $1 in
-	R750|r750|r|r3740|R3740)
-		read -p "r750 or r3740? " hpt
-		case $hpt in
-		r750)
-			DISK_CONTROLLER=$R750
-			;;
-		r3740A)
-			DISK_CONTROLLER=$R3740
-			;;
-		*)
-			echo "Didnt catch that try again"
-			exit 1
-			;;
-		esac
+	
+	R750|r750|r)
+		DISK_CONTROLLER=$R750
 		;;
-	LSI|lsi|l)
-		read -p "9361,9305 or 9201? " lsi
-		case $lsi in
-		9361)
-			DISK_CONTROLLER=$LSI_9361
-			;;
-		9305)
-			DISK_CONTROLLER=$LSI_9305
-			;;
-		9201)
+	LSI|lsi|l|9361|9305|9201)
+		if [ "$DISK_CONTROLLER" == lsi ] || [ "$DISK_CONTROLLER" == LSI ] || [ "$DISK_CONTROLLER" == l ];then
+			read -p "9361,9305 or 9201? " lsi
+			case $lsi in
+			9361)
+				DISK_CONTROLLER=$LSI_9361
+				;;
+			9305)
+				DISK_CONTROLLER=$LSI_9305
+				;;
+			9201)
+				DISK_CONTROLLER=$LSI_9201
+				;;
+			*)
+				echo "Didnt catch that try again"
+				exit 1
+				;;
+			esac
+		fi
+		if [ "$DISK_CONTROLLER" -eq 9201 ];then
 			DISK_CONTROLLER=$LSI_9201
-			;;
-		*)
-			echo "Didnt catch that try again"
-			exit 1
-			;;
-		esac
+		elif [ "$DISK_CONTROLLER" -eq 9305 ];then
+			DISK_CONTROLLER=$LSI_9305
+		elif [ "$DISK_CONTROLLER" -eq 9361 ];then
+			DISK_CONTROLLER=$LSI_9361
+		fi
 		;;
-	Adaptec|adaptec|a)
-		read -p "ASR81605Z or HBA1000?(a/h) " adap
-		case $adap in
-		a)
-			DISK_CONTROLLER=$ASR
-			;;
-		h)
-			DISK_CONTROLLER=$HBA1000
-			;;
-		*)
-			echo "Didnt catch that try again"
-			exit 1
-			;;
-		esac
+	Adaptec|adaptec|a)		
+		DISK_CONTROLLER=$HBA1000
 		;;
+
 	*)
 		echo "Unsupported controller, try configurating manually"
 		exit 0

@@ -19,6 +19,9 @@ Usage: ctdb-config [-hd]
 		Shared storage mounted permanently on each node is required.
 		Default location is "/mnt/ctdb"
 			[-d] Specify shared storage directory
+			[-g] gdeploy mode. does not prompt for nodes, VIP input
+			[-m] Protocol CTDB manages (smb,nfs,both)
+			[-w] CTDB manages winbind. does nothing if not using smb
 EOF
         exit 0
 }
@@ -59,13 +62,17 @@ echo "CTDB_RECOVERY_LOCK=$SHAREDDIR$LOCKFILE" >> $SHAREDDIR"ctdb"
 echo "CTDB_NODES=/etc/ctdb/nodes" >> $SHAREDDIR"ctdb"
 echo "CTDB_PUBLIC_ADDRESSES=/etc/ctdb/public_addresses" >> $SHAREDDIR"ctdb"
 
-read -p "CTDB manages SMB,NFS or BOTH: " PROTOCOL
+if [ -z $PROTOCOL ];then
+	read -p "CTDB manages SMB,NFS or BOTH: " PROTOCOL
+fi
 case $PROTOCOL in
-SMB)
+SMB|smb)
 	echo "CTDB_MANAGES_SAMBA=yes" >> $SHAREDDIR"ctdb"
 	echo "CTDB_SAMBA_SKIP_SHARE_CHECK=yes" >> $SHAREDDIR"ctdb"
-	read -p "CTDB manages windbind?(y/n) " AD
-	case $AD in
+	if [ -z $WINBIND ];then
+		read -p "CTDB manages winbind?(y/n) " WINBIND
+	fi	
+	case $WINBIND in
 	y)
 		echo "CTDB_MANAGES_WINBIND=yes" >> $SHAREDDIR"ctdb"
 		;;
@@ -74,10 +81,10 @@ SMB)
 		;;
 	esac
 	;;
-NFS)
+NFS|nfs)
 	echo "CTDB_MANAGES_NFS=yes" >> $SHAREDDIR"ctdb"
 	;;
-BOTH)
+BOTH|b)
 	echo "CTDB_MANAGES_SAMBA=yes" >> $SHAREDDIR"ctdb"
 	echo "CTDB_SAMBA_SKIP_SHARE_CHECK=yes" >> $SHAREDDIR"ctdb"
 	echo "CTDB_MANAGES_NFS=yes" >> $SHAREDDIR"ctdb"
@@ -94,10 +101,10 @@ echo "CTDB_SET_ControlTimeout=15" >> $SHAREDDIR"ctdb"
 
 }
 commitCTDB() {
-if [ -f "/etc/sysconfig/ctdb" ];then
-	rm -f "/etc/sysconfig/ctdb"
+if [ -f "/etc/ctdb/ctdbd.conf" ];then
+	rm -f "/etc/ctdb/ctdbd.conf"
 fi
-cp $SHAREDDIR"ctdb" "/etc/sysconfig/"
+cp $SHAREDDIR"ctdb" "/etc/ctdb/ctdbd.conf"
 }
 writeNODES(){
 if [ -f $SHAREDDIR"nodes" ];then
@@ -158,11 +165,21 @@ NICdir="/sys/class/net/"
 SHAREDDIR="/mnt/ctdb/" 
 LOCKFILE=".ctdb-lockfile"
 CTDBDIR="/etc/ctdb/"
+GDEPLOY_MODE="no"
 
-while getopts 'hd:' OPTION; do
+while getopts 'hgd:m:w' OPTION; do
 	case ${OPTION} in
 	d)
 		SHAREDDIR=${OPTARG}
+		;;
+	g)
+		GDEPLOY_MODE=yes
+		;;
+	m)
+		PROTOCOL=${OPTARG}
+		;;
+	w)
+		WINBIND=y
 		;;
 	h)
 		usage
@@ -181,14 +198,18 @@ touch $SHAREDDIR$LOCKFILE
 writeCTDB
 commitCTDB
 
-## Configure nodes file
-writeNODES
-commitNODES
+if [ $GDEPLOY_MODE == no ];then
+	## Configure nodes file
+	writeNODES
+	commitNODES
 
-## Configure public Addresses file
-writeVIP
-commitVIP
+	## Configure public Addresses file
+	writeVIP
+	commitVIP
+	
+fi
 
+systemctl restart ctdb
 #IF SMB_FLAG =yes
 ## Configure SMB as to get share up at minimum
 
