@@ -1,0 +1,7 @@
+#!/bin/bash
+mkdir /usr/local/libexec/zfs/
+echo "#!/bin/bash" > /usr/local/libexec/zfs/startzfscache.sh
+echo "sleep 30" >> /usr/local/libexec/zfs/startzfscache.sh
+echo "/sbin/zpool import -c /etc/zfs/zpool.cache -aN" >> /usr/local/libexec/zfs/startzfscache.sh
+echo "zfs mount -a" >> /usr/local/libexec/zfs/startzfscache.sh
+chmod +x /usr/local/libexec/zfs/startzfscache.sh
