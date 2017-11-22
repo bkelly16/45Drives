@@ -1,0 +1,238 @@
+#!/bin/bash
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+usage() {
+        cat << EOF
+Usage:  preconfig
+	[-a] Install all relevant packages. Does not include Ovirt
+	[-g] Install GlusterFS Packages
+	[-o] Install Ovirt4.0 Packages
+	[-s] Install Samba and CTDB packages
+	[-t] Install automated tools
+	[-v] Verbose
+	[-z] Istall ZFS packages
+	[-f] Do not prompt for install confirmation
+	[-h] Display this message
+	
+EOF
+        exit 0
+}
+status(){
+package=$1
+rpm -qa | grep -q $package || echo "$package failed to install" >> /var/log/preconfig.log
+}
+checkupdates(){
+yumtmp=/tmp/yum-check-update
+yum=/usr/bin/yum
+$yum check-update >> $yumtmp
+yumstatus=$?
+hostname=$(/bin/hostname)
+case $yumstatus in
+0)
+        echo "All packages are up to date"
+        echo "Remove Old Kernels"
+        package-cleanup -y --oldkernels --count=1
+        ;;
+*)
+        number=$(cat $yumtmp | egrep '(.i386|.x86_64|.noarch|.src)' | wc -l)
+        updates=$(cat $yumtmp | egrep '(.i386|.x86_64|.noarch|.src)')
+        echo -e "There are $number updates available on host $hostname\n"
+        #echo $updates
+	echo -e "Installing: updates"
+        $yum update $FORCE $QUIET_FLAG
+        read -p "Reboot Required, reboot now? [N/y] " op1
+        case $op1 in
+        y)
+                echo -e "Reboot in 5 seconds\nRerun the same command after reboot to finish install $(basename "$0") $@"
+		sleep 5 
+                reboot
+                ;;
+        *)
+                echo -e "Do not continue with preconfig install until you reboot!! Things will fail!!\nRerun the same command after reboot to finish install $(basename "$0") $@"
+                exit 0
+                ;;
+        esac
+        ;;
+esac
+rm -f /tmp/yum-check-update
+}
+
+GTOOLS_VERSION=2.2
+RELEASE=1
+ARCH=x86_64
+GLUSTER_FLAG=no
+SAMBA_FLAG=no
+TOOLS_FLAG=no
+ZFS_FLAG=no
+FORCE=""
+QUIET_FLAG="-q"
+
+while getopts 'afghostvz' OPTION; do
+        case ${OPTION} in
+        a)
+                GLUSTER_FLAG=yes
+                SAMBA_FLAG=yes
+                TOOLS_FLAG=yes
+                ZFS_FLAG=yes
+                ;;
+        f)
+                FORCE="-y"
+				QUIET_FLAG=""
+                ;;
+        g)
+                GLUSTER_FLAG=yes
+                ;;
+        h)
+                usage
+                ;;
+        o)
+                OVIRT_FLAG=yes
+                ;;
+        s)
+                SAMBA_FLAG=yes
+                ;;
+        t)
+                TOOLS_FLAG=yes
+                ;;
+        z)
+                ZFS_FLAG=yes
+                ;;
+        esac
+done
+if [ $# -eq 0 ];then
+        usage
+fi
+zfsrepo="http://download.zfsonlinux.org/epel/zfs-release.el7_4.noarch.rpm"
+ovirtrepo="http://resources.ovirt.org/pub/yum-repo/ovirt-release40.rpm"
+repo="http://images.45drives.com"
+
+if [ -e /var/log/preconfig.log ];then
+        rm -f /var/log/preconfig.log
+        touch /var/log/preconfig.log
+else
+        touch /var/log/preconfig.log
+fi
+rpm -qa | grep -qw yum-utils || yum install yum-utils $FORCE $QUIET_FLAG
+##check for updates
+checkupdates
+echo "Installing: Required Packages.."
+rpm -qa | grep -qw kernel-devel-$(uname -r) || yum install kernel-devel $FORCE $QUIET_FLAG
+rpm -qa | grep -qw epel || yum install epel-release $FORCE $QUIET_FLAG
+rpm -qa | grep -qw pciutils-3 || yum install pciutils $FORCE $QUIET_FLAG
+rpm -qa | grep -qw vim-enhanced || yum install vim $FORCE $QUIET_FLAG
+rpm -qa | grep -qw ntp || yum install ntp $FORCE $QUIET_FLAG
+
+##disable selinux
+sed -ie 's/enforcing/disabled/g' /etc/selinux/config
+
+if [ "$ZFS_FLAG" == "yes" ];then
+        echo "Installing: ZFS"
+        rpm -qa | grep -qw zfs-release || yum install $zfsrepo $FORCE $QUIET_FLAG
+        gpg --quiet --with-fingerprint /etc/pki/rpm-gpg/RPM-GPG-KEY-zfsonlinux
+        rpm -qa | grep -qw zfs-dkms || yum install zfs $FORCE $QUIET_FLAG
+        if [ ! -d /etc/rc.modules ];then
+                touch /etc/rc.modules
+        fi
+        zmod=$(cat /etc/rc.modules | grep "modprobe zfs" | awk 'NR==1')
+        if [ "$zmod" != "modprobe zfs" ];then
+                echo "modprobe zfs" >> /etc/rc.modules
+        fi
+        if [ ! -x /etc/rc.modules ];then
+                chmod +x /etc/rc.modules
+        fi
+        systemctl enable zfs-import-cache.service
+        systemctl enable zfs-mount.service
+fi
+if [ "$GLUSTER_FLAG" == "yes" ];then
+        echo "Installing: CentOS-GlusterFS Release,GlusterFS,Geo-Rep,FUSE Client,Server packages"
+        rpm -qa | grep -q centos-release-gluster || yum install centos-release-gluster $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw glusterfs-3 || yum install glusterfs $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw glusterfs-fuse || yum install glusterfs-fuse $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw glusterfs-server || yum install glusterfs-server $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw glusterfs-geo-replication || yum install glusterfs-geo-replication $FORCE $QUIET_FLAG
+fi
+if [ "$SAMBA_FLAG" == "yes" ];then
+		echo "Installing: CTDB - SAMBA - SAMBA GFS VFS"
+        rpm -qa | grep -qw ctdb || yum install ctdb $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw samba-common-4 || yum install samba-common $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw samba-4 || yum install samba $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw samba-winbind-clients || yum install samba-winbind-clients $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw samba-client || yum install samba-client $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw samba-vfs-glusterfs || yum install samba-vfs-glusterfs $FORCE $QUIET_FLAG
+fi
+if [ "$TOOLS_FLAG" == "yes" ];then
+		echo "Installing: Cluster Config Tools gtools, gdeploy"
+        rpm -qa | grep -qw ansible || yum install ansible $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw gdeploy || yum install gdeploy $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw gtools || yum install "$repo"/gtools/gtools-"$GTOOLS_VERSION"-"$RELEASE"."$ARCH".rpm $FORCE $QUIET_FLAG
+fi
+if [ "$OVIRT_FLAG" == "yes" ];then
+		echo "Installing: Ovirt 4.0 packages"
+        rpm -qa | grep -qw ovirt-release40 || yum install $ovirtrepo $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw ovirt-hosted-engine-setup || yum install ovirt-hosted-engine-setup $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw vdsm-gluster || yum install vdsm-gluster $FORCE $QUIET_FLAG
+        rpm -qa | grep -qw screen || yum install screen $FORCE $QUIET_FLAG
+fi
+
+echo -e "All Done...\nVerifying Install..."
+status kernel-devel-$(uname -r)
+status epel
+status pciutils-3
+status vim
+status ntp
+if [ "$ZFS_FLAG" == "yes" ];then
+        status zfs-release
+        status zfs-dkms
+        zmount=$(systemctl status zfs-mount | awk NR==2'{print $4}' | cut -d ';' -f 1)
+        zimport=$(systemctl status zfs-import-cache | awk NR==2'{print $4}' | cut -d ';' -f 1)
+        if [ "$zmount" != "enabled" ];then
+                "zfs-mount.service was not enabled" >> /var/log/preconfig.log
+        fi
+        if [ "$zimport" != "enabled" ];then
+                "zfs-import-cache.service was not enabled" >> /var/log/preconfig.log
+        fi
+fi
+if [ "$GLUSTER_FLAG" == "yes" ];then
+        status centos-release-gluster
+        status glusterfs-3
+        status glusterfs-fuse
+        status glusterfs-server
+        status glusterfs-geo-replication
+fi
+if [ "$SAMBA_FLAG" == "yes" ];then
+        status ctdb
+        status samba-common-4
+        status samba-4
+        status samba-winbind-clients
+        status samba-client
+        status samba-vfs-glusterfs
+fi
+if [ "$TOOLS_FLAG" == "yes" ];then
+        status ansible
+        status gdeploy
+        status gtools
+fi
+if [ "$OVIRT_FLAG" == "yes" ];then
+        status ovirt-release40
+        status ovirt-hosted-engine-setup
+        status vdsm-gluster
+        status screen
+fi
+state=$(cat /var/log/preconfig.log | wc -l)
+case $state in
+0)
+        echo -e "${GREEN}SUCCESS${NC}"
+        echo "Reboot required before continuing setup. Rebooting automatically in 5 seconds"
+	sleep 5
+	reboot
+
+        ;;
+*)
+        echo -e "${RED}FAILURE${NC}"
+        echo -e "Problems during installation: $state"
+        cat /var/log/preconfig.log
+        echo -e "Rerun this script or manually try to install missing packages individually\nNOTE if installing the ZFS packages use \"yum install zfs\" rather than \"yum install zfs-dkms\""
+        ;;
+esac
