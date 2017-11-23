@@ -101,10 +101,10 @@ echo "CTDB_SET_ControlTimeout=15" >> $SHAREDDIR"ctdb"
 
 }
 commitCTDB() {
-if [ -f "/etc/ctdb/ctdbd.conf" ];then
-	rm -f "/etc/ctdb/ctdbd.conf"
+if [ -f "/etc/sysconfig/ctdb" ];then
+	rm -f "/etc/sysconfig/ctdb"
 fi
-cp $SHAREDDIR"ctdb" "/etc/ctdb/ctdbd.conf"
+cp $SHAREDDIR"ctdb" "/etc/sysconfig/ctdb"
 }
 writeNODES(){
 if [ -f $SHAREDDIR"nodes" ];then
