@@ -42,18 +42,9 @@ case $yumstatus in
         #echo $updates
 	echo -e "Installing: updates"
         $yum update $FORCE $QUIET_FLAG
-        read -p "Reboot Required, reboot now? [N/y] " op1
-        case $op1 in
-        y)
-                echo -e "Reboot in 5 seconds\nRerun the same command after reboot to finish install $(basename "$0") $@"
-		sleep 5 
-                reboot
-                ;;
-        *)
-                echo -e "Do not continue with preconfig install until you reboot!! Things will fail!!\nRerun the same command after reboot to finish install $(basename "$0") $@"
-                exit 0
-                ;;
-        esac
+	echo -e "Reboot in 5 seconds\nRerun the same command after reboot to finish install $(basename "$0") $@"
+	sleep 5 
+	reboot
         ;;
 esac
 rm -f /tmp/yum-check-update
@@ -128,12 +119,12 @@ rpm -qa | grep -qw ntp || yum install ntp $FORCE $QUIET_FLAG
 sed -ie 's/enforcing/disabled/g' /etc/selinux/config
 
 ## Add alias' to .bashrc
-echo "alias sc='systemctl'" >> ~/.bashrc
-echo "alias ww='watch -n1'" >> ~/.bashrc
-echo "alias gvs='gluster volume status'" >> ~/.bashrc
-echo "alias gv='gluster volume'" >> ~/.bashrc
-echo "export TERM='xterm-256color'" >> ~/.bashrc
-echo "export TERM='linux'" >> ~/.bashrc
+#echo "alias sc='systemctl'" >> ~/.bashrc
+#echo "alias ww='watch -n1'" >> ~/.bashrc
+#echo "alias gvs='gluster volume status'" >> ~/.bashrc
+#echo "alias gv='gluster volume'" >> ~/.bashrc
+#echo "export TERM='xterm-256color'" >> ~/.bashrc
+#echo "export TERM='linux'" >> ~/.bashrc
 
 
 if [ "$ZFS_FLAG" == "yes" ];then
