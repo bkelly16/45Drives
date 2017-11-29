@@ -75,7 +75,7 @@ while getopts 'afg:hostvz' OPTION; do
                 ;;
         g)
                 GLUSTER_FLAG=yes
-                GLUSTER_VERSION=${GLUSTER_VERSION}
+                GLUSTER_VERSION=${OPTARG}
 		;;
         h)
                 usage
