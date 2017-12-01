@@ -51,6 +51,7 @@ rm -f /tmp/yum-check-update
 }
 
 GTOOLS_VERSION=2.2
+GLUSTER_VERSION=310
 RELEASE=1
 ARCH=x86_64
 GLUSTER_FLAG=no
@@ -60,7 +61,7 @@ ZFS_FLAG=no
 FORCE=""
 QUIET_FLAG="-q"
 
-while getopts 'afghostvz' OPTION; do
+while getopts 'afg:hostvz' OPTION; do
         case ${OPTION} in
         a)
                 GLUSTER_FLAG=yes
@@ -70,11 +71,12 @@ while getopts 'afghostvz' OPTION; do
                 ;;
         f)
                 FORCE="-y"
-				QUIET_FLAG=""
+		QUIET_FLAG=""
                 ;;
         g)
                 GLUSTER_FLAG=yes
-                ;;
+                GLUSTER_VERSION=${OPTARG}
+		;;
         h)
                 usage
                 ;;
@@ -147,7 +149,7 @@ if [ "$ZFS_FLAG" == "yes" ];then
 fi
 if [ "$GLUSTER_FLAG" == "yes" ];then
         echo "Installing: CentOS-GlusterFS Release,GlusterFS,Geo-Rep,FUSE Client,Server packages"
-        rpm -qa | grep -q centos-release-gluster || yum install centos-release-gluster $FORCE $QUIET_FLAG
+        rpm -qa | grep -q centos-release-gluster || yum install centos-release-gluster$GLUSTER_VERSION $FORCE $QUIET_FLAG
         rpm -qa | grep -qw glusterfs-3 || yum install glusterfs $FORCE $QUIET_FLAG
         rpm -qa | grep -qw glusterfs-fuse || yum install glusterfs-fuse $FORCE $QUIET_FLAG
         rpm -qa | grep -qw glusterfs-server || yum install glusterfs-server $FORCE $QUIET_FLAG
