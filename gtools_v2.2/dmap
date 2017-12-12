@@ -97,7 +97,7 @@ checkroot(){
 
 R750="0750"
 LSI_9201="2116"
-LSI_9305="3224"I
+LSI_9305="3224"
 LSI_9361="3316"
 ASR="Adaptec"
 HBA1000="Adaptec Series 8"
