@@ -96,12 +96,6 @@ if [ $CTDB_FLAG -eq 0 ];then
                 CTDB_FLAG=1
         fi
 fi
-if [ $OVIRT_FLAG -eq 0 ];then
-        read -p "Create volume for Ovirt Engine?[y/n] " ovirt
-        if [ "$ovirt" == "y" ];then
-                OVIRT_FLAG=1
-        fi
-fi
 }
 check4integer() {
 if [[ ! $1 =~ ^-?[0-9]+$ ]];then
@@ -176,8 +170,8 @@ POOL_NAME=
 VOLUME_BRICKS=0
 BRICK_SIZE=""
 ARBITER_FLAG=0
-ARBITER_SIZE="50G" #50 Million Files
-ARBITER_CAPACITY=$(( 50*gib2kib ))
+#ARBITER_SIZE="500G" #500 Million Files
+#ARBITER_CAPACITY=$(( 1000*gib2kib ))
 CTDB_FLAG=0
 CTDB_SIZE="2G"
 CTDB_CAPACITY=$(( 2*gib2kib ))
@@ -192,10 +186,17 @@ CAPPED_SIZE=0
 
 init
 
-while getopts 'Ab:Cdfm:n:Op:s:qh' OPTION; do
+while getopts 'A:b:Cdfm:n:Op:s:qh' OPTION; do
         case ${OPTION} in
         A)
                 ARBITER_FLAG=1
+		ARBITER_SIZE=${OPTARG}
+		if [ -z $ARBITER_SIZE ];then
+			ARBITER_SIZE="500G"
+		fi
+		arb_size=${ARBITER_SIZE:: -1}
+		echo $arb_size
+		ARBITER_CAPACITY=$(( arb_size*gib2kib ))
                 ;;
         C)
                 CTDB_FLAG=1
@@ -259,8 +260,6 @@ if [ $CAP_FLAG -eq 1 ];then
         setcap
 fi
 
-TOTAL_BRICK=$((ARBITER_FLAG + CTDB_FLAG + OVIRT_FLAG + VOLUME_BRICKS))
-
 if [ $OVIRT_FLAG -eq 1 ];then
         OVERHEAD_CAPACITY=$(( OVERHEAD_CAPACITY + $OVIRT_CAPACITY ))
         zfs create $POOL_NAME/engine
@@ -274,11 +273,26 @@ if [ $CTDB_FLAG -eq 1 ];then
         mkdir $MOUNTPOINT$POOL_NAME/ctdb/brick
 fi
 if [ $ARBITER_FLAG -eq 1 ];then
-        OVERHEAD_CAPACITY=$(( OVERHEAD_CAPACITY + $ARBITER_CAPACITY ))
-        zfs create $POOL_NAME/arb
-        zfs set quota=$ARBITER_SIZE $POOL_NAME/arb
-        mkdir $MOUNTPOINT$POOL_NAME/arb/brick
+	if [ $((VOLUME_BRICKS%2)) -ne 0 ];then
+		echo "Odd Number of bricks with an Arbiter is unsupported"
+		exit 1
+	else
+		ARBITER_COUNT=$(( VOLUME_BRICKS/2 ))
+		ARBITER_CAPACITY=$(( ARBITER_CAPACITY*ARBITER_COUNT ))
+	fi
+
+	OVERHEAD_CAPACITY=$(( OVERHEAD_CAPACITY + $ARBITER_CAPACITY ))
+	i=0
+	e="k" 
+	until [ $i -eq $ARBITER_COUNT ];do
+		j=$(expr $i + 1 )
+		zfs create $POOL_NAME/arb$j -o quota=$ARBITER_SIZE
+		mkdir $MOUNTPOINT$POOL_NAME/arb$j/brick
+		let i=i+1
+	done
 fi
+
+TOTAL_BRICK=$((ARBITER_COUNT + CTDB_FLAG + OVIRT_FLAG + VOLUME_BRICKS))
 
 VOLUME_CAPACITY=$(( PADDED_CAPACITY - OVERHEAD_CAPACITY ))
 BRICK_CAPACITY=$(( VOLUME_CAPACITY/VOLUME_BRICKS ))
