@@ -1,0 +1,127 @@
+#!/bin/bash
+# ---------------------------------------------------------------------------
+
+# mkarb - generate brick layout for creating a 3 rep 1 arb volume with gdpeloy
+# Copyright 2017, Brett Kelly <bkelly@45drives.com>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+usage() { # Help
+        cat << EOF
+Usage:	mkarb
+		[-b] Specify # of data bricks
+		[-d] debug flag
+		[-n] Specify hostnames of nodes in cluster. Use one flag per entry
+		[-h] Displays this message
+
+EOF
+        exit 0
+}
+shift1(){
+        arr=( "$@" )
+        ITEM_0=${arr[0]}
+        i=0
+        for ar in "${arr[@]}";do
+                if [ "$(( i+1 ))" -eq "${#arr[@]}" ];then
+                        NODES_1[$i]=$ITEM_0
+                else
+                        i_=$(( i+1 ))
+                        NODES_1[$i]=${arr[$i_]}
+                fi
+                let i=i+1
+        done
+}
+shift2(){
+        arr2=( "$@" )
+        ITEM_0=${arr2[0]}
+        ITEM_1=${arr2[1]}
+        i=0
+        for ar in "${arr2[@]}";do
+                if [ "$(( i+1 ))" -eq "${#arr2[@]}" ];then
+                        NODES_2[$i]=$ITEM_1
+                elif [ "$(( i+2 ))" -eq "${#arr2[@]}" ];then
+                        NODES_2[$i]=$ITEM_0
+                else
+                        i_=$(( i+2 ))
+                        NODES_2[$i]=${arr2[$i_]}
+                fi
+                let i=i+1
+        done
+
+}
+debug(){
+        echo nodes:${NODES_0[*]}
+        echo nodes_shift:${NODES_1[*]}
+        echo nodes_shift_2:${NODES_2[*]}
+}
+
+while getopts 'hb:dn:' OPTION; do
+        case ${OPTION} in
+		b)
+			BRICK_COUNT=${OPTARG}
+			;;
+		d)
+			DEBUG=yes
+			;;
+        n)
+			NODES_0+=("$OPTARG")
+			;;
+		h)
+			usage
+			;;
+        esac
+done
+
+if [ -z $NODES_0 ];then
+	NODES_0=(gluster1 gluster2 gluster3 gluster4)
+fi
+if [ -z $BRICK_COUNT ];then
+	echo "Brick count required"
+	exit 1
+fi
+if [ $((BRICK_COUNT%2)) -eq 0 ];then
+	:
+else
+	echo " Odd # of bricks unsupported"
+	exit 1
+fi
+
+shift1 "${NODES_0[@]}"
+shift2 "${NODES_0[@]}"
+
+i=0
+b=1
+# Create array of bricks , (1 2 3 4 .... brickn)
+while [ "$BRICK_COUNT" -gt "$i" ];do
+        BRICKS[$i]=$b
+        let i=i+1
+        let b=b+1
+done
+
+i=0
+bcount=0
+bset=$(expr $BRICK_COUNT / 2)
+while [ "$bset" -gt "$i" ];do
+        j=0
+        for host in ${NODES_0[@]};do
+			bcount1=$(expr $bcount + 1)
+			FINAL+=${NODES_0[$j]}:/zpool/vol${BRICKS[$bcount1]}/brick,${NODES_1[$j]}:/zpool/vol${BRICKS[$bcount]}/brick,${NODES_2[$j]}:/zpool/arb"$(( i+1 ))"/brick
+			let j=j+1
+        done
+		if [ $i -eq $(( bset-1 )) ];then
+			:
+		else
+			FINAL+=,
+		fi
+		let bcount=bcount+2
+        let i=i+1
+done
+
+echo "${FINAL[*]}"
+
+if [ "$DEBUG" == "yes" ];then
+        debug
+fi
