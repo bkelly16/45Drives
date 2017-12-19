@@ -60,8 +60,9 @@ TOOLS_FLAG=no
 ZFS_FLAG=no
 FORCE=""
 QUIET_FLAG="-q"
+SKIP_UPDATES="no"
 
-while getopts 'afg:hostvz' OPTION; do
+while getopts 'afg:hostuvz' OPTION; do
         case ${OPTION} in
         a)
                 GLUSTER_FLAG=yes
@@ -89,6 +90,9 @@ while getopts 'afg:hostvz' OPTION; do
         t)
                 TOOLS_FLAG=yes
                 ;;
+	u)
+		SKIP_UPDATES=yes
+		;;
         z)
                 ZFS_FLAG=yes
                 ;;
@@ -109,14 +113,15 @@ else
 fi
 rpm -qa | grep -qw yum-utils || yum install yum-utils $FORCE $QUIET_FLAG
 ##check for updates
-checkupdates
-echo "Installing: Required Packages.."
-rpm -qa | grep -qw kernel-devel-$(uname -r) || yum install kernel-devel $FORCE $QUIET_FLAG
-rpm -qa | grep -qw epel || yum install epel-release $FORCE $QUIET_FLAG
-rpm -qa | grep -qw pciutils-3 || yum install pciutils $FORCE $QUIET_FLAG
-rpm -qa | grep -qw vim-enhanced || yum install vim $FORCE $QUIET_FLAG
-rpm -qa | grep -qw ntp || yum install ntp $FORCE $QUIET_FLAG
-
+if [ "$SKIP_UPDATES" == "no" ];then
+	checkupdates
+	echo "Installing: Required Packages.."
+	rpm -qa | grep -qw kernel-devel-$(uname -r) || yum install kernel-devel $FORCE $QUIET_FLAG
+	rpm -qa | grep -qw epel || yum install epel-release $FORCE $QUIET_FLAG
+	rpm -qa | grep -qw pciutils-3 || yum install pciutils $FORCE $QUIET_FLAG
+	rpm -qa | grep -qw vim-enhanced || yum install vim $FORCE $QUIET_FLAG
+	rpm -qa | grep -qw ntp || yum install ntp $FORCE $QUIET_FLAG
+fi
 ##disable selinux
 sed -ie 's/enforcing/disabled/g' /etc/selinux/config
 
