@@ -26,6 +26,8 @@ zfs set xattr=sa $POOL_NAME
 zfs set exec=off $POOL_NAME
 zfs set sync=disabled $POOL_NAME
 zfs set compression=lz4 $POOL_NAME
+zfs set acltype=posixacl $POOL_NAME
+zfs set aclinherit=passthrough $POOL_NAME
 if [ "$QUIET" == "yes" ];then
 	:
 else
@@ -34,6 +36,8 @@ else
 	zfs get xattr $POOL_NAME | awk 'NR==2'
 	zfs get exec $POOL_NAME | awk 'NR==2'
 	zfs get sync $POOL_NAME | awk 'NR==2'
-	zfs get compression $POOL_NAME | awk 'NR==2'	
+	zfs get compression $POOL_NAME | awk 'NR==2'
+	zfs get acltype $POOL_NAME | awk 'NR==2'
+	zfs get aclinherit $POOL_NAME | awk 'NR==2"	
 	echo
 fi
