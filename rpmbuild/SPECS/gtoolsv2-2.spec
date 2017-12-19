@@ -1,6 +1,6 @@
 Name: gtools
 Version: 2.2
-Release: 1
+Release: 3
 Summary: Clustering cli tools
 Source0: gtools-2.2.tar.gz
 License: GPL
@@ -39,8 +39,10 @@ install -m 0755 mapSAS3224 $RPM_BUILD_ROOT/opt/gtools/bin/mapSAS3224
 install -m 0755 mapSAS3316 $RPM_BUILD_ROOT/opt/gtools/bin/mapSAS3316
 install -m 0755 mapr750 $RPM_BUILD_ROOT/opt/gtools/bin/mapr750
 install -m 0755 maprr3740 $RPM_BUILD_ROOT/opt/gtools/bin/maprr3740
+install -m 0755 mkarb $RPM_BUILD_ROOT/opt/gtools/bin/mkarb
 install -m 0755 mkbrick $RPM_BUILD_ROOT/opt/gtools/bin/mkbrick
 install -m 0755 startzfscache $RPM_BUILD_ROOT/opt/gtools/bin/startzfscache
+install -m 0755 startgdash $RPM_BUILD_ROOT/opt/gtools/bin/startgdash
 install -m 0755 tunepool $RPM_BUILD_ROOT/opt/gtools/bin/tunepool
 install -m 0755 wipedev $RPM_BUILD_ROOT/opt/gtools/bin/wipedev
 install -m 0755 zcreate $RPM_BUILD_ROOT/opt/gtools/bin/zcreate
@@ -50,6 +52,7 @@ ln -sf /opt/gtools/bin/dmap ${RPM_BUILD_ROOT}%{_bindir}
 ln -sf /opt/gtools/bin/gcreate ${RPM_BUILD_ROOT}%{_bindir}
 ln -sf /opt/gtools/bin/loadtest ${RPM_BUILD_ROOT}%{_bindir}
 ln -sf /opt/gtools/bin/lsdev ${RPM_BUILD_ROOT}%{_bindir}
+ln -sf /opt/gtools/bin/mkarb ${RPM_BUILD_ROOT}%{_bindir}
 ln -sf /opt/gtools/bin/mkbrick ${RPM_BUILD_ROOT}%{_bindir}
 ln -sf /opt/gtools/bin/wipedev ${RPM_BUILD_ROOT}%{_bindir}
 ln -sf /opt/gtools/bin/zcreate ${RPM_BUILD_ROOT}%{_bindir}
@@ -75,9 +78,11 @@ rm -rf $RPM_BUILD_ROOT
 /opt/gtools/bin/mapSAS3316
 /opt/gtools/bin/mapr750
 /opt/gtools/bin/maprr3740
+/opt/gtools/bin/mkarb
 /opt/gtools/bin/mkbrick
 /opt/gtools/bin/wipedev
 /opt/gtools/bin/startzfscache
+/opt/gtools/bin/startgdash
 /opt/gtools/bin/tunepool
 /opt/gtools/bin/zcreate
 
@@ -85,6 +90,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/gcreate
 %{_bindir}/loadtest
 %{_bindir}/lsdev
+%{_bindir}/mkarb
 %{_bindir}/mkbrick
 %{_bindir}/wipedev
 %{_bindir}/zcreate
@@ -92,4 +98,7 @@ rm -rf $RPM_BUILD_ROOT
 %changelog
 * Mon Nov 20 2017 BK
 - First release of 2.2
+
+* Mon Dec 18 2017 BK
+- Second release of 2.2 updates for arbiter support, gdash installation
 

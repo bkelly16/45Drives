@@ -1,0 +1,14 @@
+#!/bin/bash
+touch /usr/lib/systemd/system/gdash.service
+echo "[Unit]" > /usr/lib/systemd/system/gdash.service
+echo "Description=gdash: GlusterFS Dashboard">> /usr/lib/systemd/system/gdash.service
+echo "After=glusterd.service" >> /usr/lib/systemd/system/gdash.service
+echo >> /usr/lib/systemd/system/gdash.service
+echo "[Service]" >> /usr/lib/systemd/system/gdash.service
+echo "type=simple" >> /usr/lib/systemd/system/gdash.service
+echo "ExecStart=/usr/bin/gdash -p 80" >> /usr/lib/systemd/system/gdash.service
+echo >> /usr/lib/systemd/system/gdash.service
+echo "[Install]" >> /usr/lib/systemd/system/gdash.service
+echo "WantedBy=multi-user.target" >> /usr/lib/systemd/system/gdash.service
+systemctl start gdash
+systemctl enable gdash
