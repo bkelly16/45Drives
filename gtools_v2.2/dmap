@@ -12,7 +12,6 @@
 usage() { # Help
         cat << EOF
 Usage:	dmap
-		[-c] Specify Disk Controller
 		[-m] Creates map but doesnt trigger udev rules
 		[-s] Specify chassis size
 		[-q] Quiet Mode
@@ -23,47 +22,15 @@ EOF
         exit 0
 }
 gethba() {
-	case $1 in
-	
-	R750|r750|r)
-		DISK_CONTROLLER=$R750
-		;;
-	LSI|lsi|l|9361|9305|9201)
-		if [ "$DISK_CONTROLLER" == lsi ] || [ "$DISK_CONTROLLER" == LSI ] || [ "$DISK_CONTROLLER" == l ];then
-			read -p "9361,9305 or 9201? " lsi
-			case $lsi in
-			9361)
-				DISK_CONTROLLER=$LSI_9361
-				;;
-			9305)
-				DISK_CONTROLLER=$LSI_9305
-				;;
-			9201)
-				DISK_CONTROLLER=$LSI_9201
-				;;
-			*)
-				echo "Didnt catch that try again"
-				exit 1
-				;;
-			esac
-		fi
-		if [ "$DISK_CONTROLLER" -eq 9201 ];then
-			DISK_CONTROLLER=$LSI_9201
-		elif [ "$DISK_CONTROLLER" -eq 9305 ];then
-			DISK_CONTROLLER=$LSI_9305
-		elif [ "$DISK_CONTROLLER" -eq 9361 ];then
-			DISK_CONTROLLER=$LSI_9361
-		fi
-		;;
-	Adaptec|adaptec|a)		
-		DISK_CONTROLLER=$HBA1000
-		;;
-
-	*)
-		echo "Unsupported controller, try configurating manually"
-		exit 0
-		;;	
-	esac
+if [[ $(lspci | grep $R750) ]];then
+	DISK_CONTROLLER=$R750
+elif [[ $(lspci | grep $LSI_9201) ]];then
+	DISK_CONTROLLER=$LSI_9201
+elif [[ $(lspci | grep $LSI_9305) ]];then
+	DISK_CONTROLLER=$LSI_9305
+elif [[ $(lspci | grep $HBA1000) ]];then
+	CARD="$HBA1000"	
+fi
 }
 checkchassis(){
 	if [ $1 -eq 30 ] || [ $1 -eq 45 ] || [ $1 -eq 60 ] || [ $1 -eq 15 ];then
@@ -99,9 +66,7 @@ R750="0750"
 LSI_9201="2116"
 LSI_9305="3224"
 LSI_9361="3316"
-ASR="Adaptec"
 HBA1000="Adaptec Series 8"
-R3740="3740"
 DISK_CONTROLLER=
 CHASSIS=
 QUIET=no
@@ -140,12 +105,11 @@ if [ $RESET_MAP == yes ];then
 	echo "Drive Aliasing reset"
 	exit 0
 fi
-if [ -z $DISK_CONTROLLER ] || [ -z $CHASSIS ]; then
-	read -p "Disk Controller? " DISK_CONTROLLER
+if [ -z $CHASSIS ]; then
 	read -p "Chassis Size? " CHASSIS
 fi
 
-gethba $DISK_CONTROLLER
+gethba
 checkchassis $CHASSIS
 
 if [ "$DISK_CONTROLLER" == "$R750" ];then
@@ -154,12 +118,8 @@ elif [ "$DISK_CONTROLLER" == "$LSI_9201" ];then
 	/opt/gtools/bin/mapSAS2116 $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$LSI_9305" ];then
 	/opt/gtools/bin/mapSAS3224 $CHASSIS $DISK_CONTROLLER
-elif [ "$DISK_CONTROLLER" == "$ASR" ];then
-	/opt/gtools/bin/mapadaptec $CHASSIS $DISK_CONTROLLER
-elif [ "$DISK_CONTROLLER" == "$RR3740" ];then
-	/opt/gtools/bin/maprr3740 $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$HBA1000" ];then
-	/opt/gtools/bin/mapadaptec $CHASSIS $DISK_CONTROLLERi
+	/opt/gtools/bin/mapadaptec $CHASSIS $DISK_CONTROLLER
 elif [ "$DISK_CONTROLLER" == "$LSI_9361" ];then
 	/opt/gtools/bin/mapSAS3316 $CHASSIS $DISK_CONTROLLER
 fi

@@ -51,24 +51,10 @@ setBAYstatus() {
 		BAYSTATUS[$1]=$partition
 	fi
 }
-setBAYstatusNC() {
-	if [ ! -b /dev/disk/by-vdev/$DRIVE ];then
-		printf -v absent "%-5s" ${BAY[$1]}  
-		BAYSTATUS[$1]=$absent
-	fi
-	partcount=$((ls /dev/disk/by-vdev/ | grep -w ${BAY[$1]} | wc -l) 2>/dev/null)
-	if [ "$partcount" -eq "1" ];then
-		printf -v present "*%-5s" ${BAY[$1]}  	
-		BAYSTATUS[$1]=$present
-	elif [ "$partcount" -gt "1" ];then
-		printf -v partition "**%-5s" ${BAY[$1]}  	
-		BAYSTATUS[$1]=$partition
-	fi
-}
 getCARDname() {
 if [[ $(lspci | grep $R750) ]];then
 	CARD="HighPoint R750"
-	DRIVERVERSION=$(cat /proc/scsi/r750/10 2>/dev/null | awk 'NR==1{print $5}')
+	DRIVERVERSION=$(cat /proc/scsi/r750/* 2>/dev/null | awk 'NR==1{print $5}')
 elif [[ $(lspci | grep $LSI_9201) ]];then
 	CARD="LSI 9201-16i"
 	DRIVERVERSION=$(modinfo mpt2sas | grep version | awk 'NR==1{print $2}')
@@ -91,17 +77,6 @@ while [ $i -lt $BAYS ];do
 	let j=j+1
 done
 }
-
-COLOR_FLAG=yes
-
-while getopts 'nh' OPTION; do
-	case ${OPTION} in
-	n)
-		COLOR_FLAG=no
-		;;
-	esac
-done
-
 BAYS=$((cat /etc/zfs/vdev_id.conf| awk "NR>2" | wc -l) 2>/dev/null)
 
 getCARDname
@@ -125,12 +100,10 @@ case $BAYS in
 	line 24 _
 	while [ $i -lt $WIDTH ];do
 		i_=$(expr $WIDTH_ - $i ) # invert counter for first row
-		if [ $COLOR_FLAG == no ];then
-			setBAYstatusNC $i_
-		else
-			setBAYstatus $i_
-		fi
+		setBAYstatus $i_
+		#setBAYstatus $j
 		printf "| %s |\n" "${BAYSTATUS[$i_]}" #displays drives in a snake pattern 
+		#printf "| %-7s | %-7s | %-7s |\n" ${BAY[$i]} ${BAY[$j]} ${BAY[$k]}
 		let i=i+1
 		let j=j+1
 	done
@@ -144,14 +117,10 @@ case $BAYS in
 	line 24 _
 	while [ $i -lt $WIDTH ];do
 		i_=$(expr $WIDTH_ - $i ) # invert counter for first row
-		if [ $COLOR_FLAG == no ];then
-			setBAYstatusNC $i_
-			setBAYstatusNC $j
-		else
-			setBAYstatus $i_
-			setBAYstatus $j
-		fi
+		setBAYstatus $i_
+		setBAYstatus $j
 		printf "| %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" #displays drives in a snake pattern 
+		#printf "| %-7s | %-7s | %-7s |\n" ${BAY[$i]} ${BAY[$j]} ${BAY[$k]}
 		let i=i+1
 		let j=j+1
 	done
@@ -166,15 +135,9 @@ case $BAYS in
 	while [ $i -lt $WIDTH ];do
 		k_=$(expr $WIDTH + $WIDTH + $WIDTH_ - $i ) #invert counter for 3rd row
 		i_=$(expr $WIDTH_ - $i ) # invert counter for first row
-		if [ $COLOR_FLAG == no ];then
-			setBAYstatusNC $i_
-			setBAYstatusNC $j
-			setBAYstatusNC $k_
-		else
-			setBAYstatus $i_
-			setBAYstatus $j
-			setBAYstatus $k_
-		fi
+		setBAYstatus $i_
+		setBAYstatus $j
+		setBAYstatus $k_
 		printf "| %s | %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k_]}"	
 		#printf "| %-7s | %-7s | %-7s |\n" ${BAY[$i]} ${BAY[$j]} ${BAY[$k]}
 		let i=i+1
@@ -192,18 +155,12 @@ case $BAYS in
 	while [ $i -lt $WIDTH ];do
 		k_=$(expr $WIDTH + $WIDTH + $WIDTH_ - $i )
 		i_=$(expr $WIDTH_ - $i )
-		if [ $COLOR_FLAG == no ];then
-			setBAYstatusNC $i_
-			setBAYstatusNC $j
-			setBAYstatusNC $k_
-			setBAYstatusNC $l
-		else
-			setBAYstatus $i_
-			setBAYstatus $j
-			setBAYstatus $k_
-			setBAYstatus $l
-		fi
+		setBAYstatus $i_
+		setBAYstatus $j
+		setBAYstatus $k_
+		setBAYstatus $l
 		printf "| %s | %s | %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k_]}" "${BAYSTATUS[$l]}"	
+		#printf "| %-7s | %-7s | %-7s |\n" ${BAY[$i]} ${BAY[$j]} ${BAY[$k]}
 		let i=i+1
 		let j=j+1
 		let k=k+1
