@@ -8,7 +8,7 @@ usage() {
 Usage:  preconfig
 	[-a] Install all relevant packages. Does not include Ovirt
 	[-g] Install GlusterFS Packages
-	[-o] Install Ovirt4.0 Packages
+	[-o] Install Ovirt Packages
 	[-s] Install Samba and CTDB packages
 	[-t] Install automated tools
 	[-v] Verbose
@@ -52,6 +52,7 @@ rm -f /tmp/yum-check-update
 
 GTOOLS_VERSION=2.2
 GLUSTER_VERSION=310
+OVIRT_VERSION=41
 RELEASE=4
 ARCH=x86_64
 GLUSTER_FLAG=no
@@ -62,7 +63,7 @@ FORCE=""
 QUIET_FLAG="-q"
 SKIP_UPDATES="no"
 
-while getopts 'afg:hostuvz' OPTION; do
+while getopts 'afg:ho:istuvz' OPTION; do
         case ${OPTION} in
         a)
                 GLUSTER_FLAG=yes
@@ -83,6 +84,7 @@ while getopts 'afg:hostuvz' OPTION; do
                 ;;
         o)
                 OVIRT_FLAG=yes
+		OVIRT_VERSION=${OPTARG}
                 ;;
         s)
                 SAMBA_FLAG=yes
@@ -102,7 +104,7 @@ if [ $# -eq 0 ];then
         usage
 fi
 zfsrepo="http://download.zfsonlinux.org/epel/zfs-release.el7_4.noarch.rpm"
-ovirtrepo="http://resources.ovirt.org/pub/yum-repo/ovirt-release40.rpm"
+ovirtrepo="http://resources.ovirt.org/pub/yum-repo/ovirt-release$OVIRT_VERSION.rpm"
 repo="http://images.45drives.com"
 
 if [ -e /var/log/preconfig.log ];then
@@ -178,8 +180,8 @@ if [ "$TOOLS_FLAG" == "yes" ];then
 	pip list --format=columns 2> /dev/null | grep -qw gdash || pip install gdash	
 fi
 if [ "$OVIRT_FLAG" == "yes" ];then
-		echo "Installing: Ovirt 4.0 packages"
-        rpm -qa | grep -qw ovirt-release40 || yum install $ovirtrepo $FORCE $QUIET_FLAG
+		echo "Installing: Ovirt packages"
+        rpm -qa | grep -qw ovirt-release || yum install $ovirtrepo $FORCE $QUIET_FLAG
         rpm -qa | grep -qw ovirt-hosted-engine-setup || yum install ovirt-hosted-engine-setup $FORCE $QUIET_FLAG
         rpm -qa | grep -qw vdsm-gluster || yum install vdsm-gluster $FORCE $QUIET_FLAG
         rpm -qa | grep -qw screen || yum install screen $FORCE $QUIET_FLAG
@@ -224,7 +226,7 @@ if [ "$TOOLS_FLAG" == "yes" ];then
         status gtools
 fi
 if [ "$OVIRT_FLAG" == "yes" ];then
-        status ovirt-release40
+        status ovirt-release${OVIRT_VERSION}
         status ovirt-hosted-engine-setup
         status vdsm-gluster
         status screen
