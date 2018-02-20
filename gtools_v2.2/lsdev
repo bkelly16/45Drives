@@ -69,6 +69,7 @@ getCARDname() {
 if [[ $(lspci | grep $R750) ]];then
 	CARD="HighPoint R750"
 	DRIVERVERSION=$(cat /proc/scsi/r750/* 2>/dev/null | awk 'NR==1{print $5}')
+	OLD_MAP=yes #Default R750 to always use old mapping
 elif [[ $(lspci | grep $LSI_9201) ]];then
 	CARD="LSI 9201-16i"
 	DRIVERVERSION=$(modinfo mpt2sas | grep version | awk 'NR==1{print $2}')
@@ -92,10 +93,14 @@ while [ $i -lt $BAYS ];do
 done
 }
 COLOR_FLAG=yes
-while getopts 'nh' OPTION; do
+OLD_MAP=no
+while getopts 'onh' OPTION; do
 	case ${OPTION} in
 	n)
 		COLOR_FLAG=no
+		;;
+	o)
+		OLD_MAP=yes
 		;;
 	esac
 done
@@ -135,14 +140,30 @@ case $BAYS in
 	line 24 _
 	while [ $i -lt $WIDTH ];do
 		i_=$(expr $WIDTH_ - $i ) # invert counter for first row
+		j_=$(expr $WIDTH + $WIDTH_ - $i )
 		if [ $COLOR_FLAG == no ];then
 			setBAYstatusNC $i_
-			setBAYstatusNC $j
+			if [ $OLD_MAP == yes ];then
+				setBAYstatusNC $j
+			else
+				setBAYstatusNC $j_
+			fi
+	
 		else
 			setBAYstatus $i_
-			setBAYstatus $j
+			if [ $OLD_MAP == yes ];then
+				setBAYstatus $j
+			else
+				setBAYstatus $j_
+			fi
+
 		fi
-		printf "| %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" #displays drives in a snake pattern 
+		if [ $OLD_MAP = yes ];then
+			printf "| %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" 
+		else
+			printf "| %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j_]}" 
+		fi	
+ 
 		let i=i+1
 		let j=j+1
 	done
@@ -154,19 +175,32 @@ case $BAYS in
 	#45Unit
 	line 24 _
 	while [ $i -lt $WIDTH ];do
-		k_=$(expr $WIDTH + $WIDTH + $WIDTH_ - $i ) #invert counter for 3rd row
-		i_=$(expr $WIDTH_ - $i ) # invert counter for first row
+		k_=$(expr $WIDTH + $WIDTH + $WIDTH_ - $i )
+		j_=$(expr $WIDTH + $WIDTH_ - $i )
+		i_=$(expr $WIDTH_ - $i )  
 		if [ $COLOR_FLAG == no ];then
 			setBAYstatusNC $i_
-			setBAYstatusNC $j
+			if [ $OLD_MAP == yes ];then
+				setBAYstatusNC $j
+			else
+				setBAYstatusNC $j_
+			fi
 			setBAYstatusNC $k_
 		else
 			setBAYstatus $i_
-			setBAYstatus $j
+			if [ $OLD_MAP == yes ];then
+				setBAYstatus $j
+			else
+				setBAYstatus $j_
+			fi
+
 			setBAYstatus $k_
 		fi
-		printf "| %s | %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k_]}"	
-		#printf "| %-7s | %-7s | %-7s |\n" ${BAY[$i]} ${BAY[$j]} ${BAY[$k]}
+		if [ $OLD_MAP = yes ];then
+			printf "| %s | %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k_]}"
+		else
+			printf "| %s | %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j_]}" "${BAYSTATUS[$k_]}"
+		fi	
 		let i=i+1
 		let j=j+1
 		let k=k+1
@@ -179,20 +213,44 @@ case $BAYS in
 	#60unit
 	line 32 _
 	while [ $i -lt $WIDTH ];do
+		l_=$(expr $WIDTH + $WIDTH + $WIDTH + $WIDTH_ - $i )
 		k_=$(expr $WIDTH + $WIDTH + $WIDTH_ - $i )
+		j_=$(expr $WIDTH + $WIDTH_ - $i )
 		i_=$(expr $WIDTH_ - $i )
 		if [ $COLOR_FLAG == no ];then
 			setBAYstatusNC $i_
-			setBAYstatusNC $j
+			if [ $OLD_MAP == yes ];then
+				setBAYstatusNC $j
+			else
+				setBAYstatusNC $j_
+			fi
 			setBAYstatusNC $k_
-			setBAYstatusNC $l
+			if [ $OLD_MAP == yes ];then
+				setBAYstatusNC $l
+			else
+				setBAYstatusNC $l_
+			fi
+
 		else
 			setBAYstatus $i_
-			setBAYstatus $j
+			if [ $OLD_MAP == yes ];then
+				setBAYstatus $j
+			else
+				setBAYstatus $j_
+			fi
 			setBAYstatus $k_
-			setBAYstatus $l
+			if [ $OLD_MAP == yes ];then
+				setBAYstatus $l
+			else
+				setBAYstatus $l_
+			fi
+
 		fi
-		printf "| %s | %s | %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k_]}" "${BAYSTATUS[$l]}"	
+		if [ $OLD_MAP = yes ];then
+			printf "| %s | %s | %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j]}" "${BAYSTATUS[$k_]}" "${BAYSTATUS[$l]}"
+		else
+			printf "| %s | %s | %s | %s |\n" "${BAYSTATUS[$i_]}" "${BAYSTATUS[$j_]}" "${BAYSTATUS[$k_]}" "${BAYSTATUS[$l_]}"
+		fi
 		let i=i+1
 		let j=j+1
 		let k=k+1

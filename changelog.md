@@ -1,0 +1,41 @@
+Tue Feb 20 14:46:48 AST 2018
+- Preconfig
+  - Added line to install ipmitool under pre-req packages
+- dmap
+  - added OLD_MAP flag for older chassis support.
+  - Added check for chassis size by querying the product info flashed at assembly time. If not set prompts user for input.
+- lsdev
+  - Updated to take OLD_MAP as input and display accordingly, defaults to OLD_MAP=no
+  - OLD_MAP=yes will use the snaking displays
+  - OLD_MAP=no will use the universal layout
+  - If it detects R750 it will always default to the old mapping
+- lsmodel
+  - Updated to take OLD_MAP as input and display accordingly, defaults to OLD_MAP=no
+  - OLD_MAP=yes will use the snaking displays
+  - OLD_MAP=no will use the universal layout
+  - If it detects R750 it will always default to the old mapping
+- lstemp
+  - Updated to take OLD_MAP as input and display accordingly, defaults to OLD_MAP=no
+  - OLD_MAP=yes will use the snaking displays
+  - OLD_MAP=no will use the universal layout
+  - If it detects R750 it will always default to the old mapping
+- mapadaptec -
+  - Updated to take OLD_MAP as input and maps accordingly, defaults to OLD_MAP=no
+  - OLD_MAP=yes will use the old card spanning mapping
+  - OLD_MAP=no will use the universal mapping
+- mapr750
+  - no updates required
+- mapSAS2116
+  - Updated to take OLD_MAP as input and maps accordingly, defaults to OLD_MAP=no
+  - OLD_MAP=yes will use the old card spanning mapping
+  - OLD_MAP=no will use the universal mapping
+- mapSAS3224
+  - Updated to take OLD_MAP as input and maps accordingly, defaults to OLD_MAP=no
+  - OLD_MAP=yes will use the old card spanning mapping
+  - OLD_MAP=no will use the universal mapping
+- mapSAS3316
+  - Updated to take OLD_MAP as input and maps accordingly, defaults to OLD_MAP=no
+  - OLD_MAP=yes will use the old card spanning mapping
+  - OLD_MAP=no will use the universal mapping
+- datagen2
+  - improved datagen script, dynamically create nested directories/files

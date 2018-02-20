@@ -1,0 +1,107 @@
+#!/bin/bash
+
+usage() { # Help
+        cat << EOF
+Usage:  datagen
+	[-h] Displays this message
+	[-d] # of directories to create Default is 5
+	[-f] # of files to create. Default is 5
+	[-F] Size of files to create in MiB. Default is 1 MiB
+	[-m] specify mount point
+EOF
+        exit 0
+}
+
+wdata() {
+	BLOCK_COUNT=$1
+	COUNT=$2
+	FILE_PATH=$3
+	FILE="$FILE_PATH/file_$COUNT"
+	echo $FILE
+	( dd if=<(openssl enc -aes-256-ctr -pass pass:"(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64)" -nosalt < /dev/zero ) of=$FILE bs=64k count=$BLOCK_COUNT iflag=fullblock > /dev/null )2>/dev/null
+}
+
+debug(){
+	cat << EOF
+	DIR_COUNT=$DIR_COUNT
+	FILE_PER_DIR=$FILE_PER_DIR
+	FILE_SIZE=$FILE_SIZE
+	BLOCK_COUNT=$BLOCK_COUNT
+	MOUNT_POINT=$MOUNT_POINT
+	FILE_PATH=$FILE
+EOF
+}
+
+DIR_COUNT=5
+FILE_PER_DIR=5
+FILE_SIZE=1
+
+while getopts 'm:d:f:F:h' OPTION;do
+	case ${OPTION} in
+	m)
+                mp=${OPTARG}
+                if [ "${mp: -1}" == "/" ];then
+			MOUNT_POINT="${mp%?}"
+		else
+			MOUNT_POINT=$mp
+		fi
+		if [ ! -d "$MOUNT_POINT" ];then
+			echo "Mountpoint does not exist"
+			exit 1
+		fi
+                ;;
+
+	d)
+		DIR_COUNT=${OPTARG}
+		;;
+	f)
+		FILE_PER_DIR=${OPTARG}
+		;;
+	F)
+		FILE_SIZE=${OPTARG}
+		;;
+	h)
+		usage
+		;;
+	esac
+done
+
+if [ -z $MOUNT_POINT ];then
+        echo "mount point required"
+        exit 1
+fi
+
+BLOCK_COUNT=$(( FILE_SIZE*16 ))
+
+TOTAL_SIZE=$(( FILE_PER_DIR*DIR_COUNT*FILE_SIZE ))
+
+cat << EOF
+
+	!!! WARNING !!!
+	You are about to create $TOTAL_SIZE MiB of data on $MOUNT_POINT
+
+EOF
+
+read -p "Do you want to continue ? Y/n " op1
+case $op1 in
+	Y|y)
+		:
+		;;
+	*)
+		exit 1
+		;;
+esac
+
+i=0
+while [ $i -lt $DIR_COUNT ];do
+	mkdir $MOUNT_POINT/dir_$i 2> /dev/null
+	j=0
+	while [ $j -lt $FILE_PER_DIR ];do
+		wdata $BLOCK_COUNT $j $MOUNT_POINT/dir_$i
+		let j=j+1
+	done
+	let i=i+1
+done
+
+sleep 5
+du -sh $MOUNT_POINT
