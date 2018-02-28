@@ -1,6 +1,6 @@
 Name: gtools
 Version: 2.2
-Release: 3
+Release: 5
 Summary: Clustering cli tools
 Source0: gtools-2.2.tar.gz
 License: GPL
@@ -96,9 +96,14 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/zcreate
 
 %changelog
-* Mon Nov 20 2017 BK
-- First release of 2.2
+* Wed Feb 28 2018 BK
+- fifth release of 2.2 - Updates for universal wiring
+
+* Mon Jan 20 2018 BK
+- fourth release of 2.2 updates for lsdev,dmap
 
 * Mon Dec 18 2017 BK
 - Second release of 2.2 updates for arbiter support, gdash installation
 
+* Mon Nov 20 2017 BK
+- First release of 2.2
