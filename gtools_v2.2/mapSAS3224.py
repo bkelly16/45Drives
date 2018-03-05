@@ -96,7 +96,7 @@ for entry in cardList:
     while row != 5:
       for b in range(0,16):
         if numCards > 0:
-          f.write("alias "+str(row)+"-"+str(slot)+"\t/dev/disk/by-path/pci-0000:"+pciAddress+":00.0-sas-phy"+str(phyList[a])+"-lun-0\n")
+          f.write("alias "+str(row)+"-"+str(slot)+"\t/dev/disk/by-path/pci-0000:"+pciAddress+":00.0-sas-phy"+str(phyList[b])+"-lun-0\n")
           if slot == 15:
             slot = 1
             row += 1
@@ -105,7 +105,7 @@ for entry in cardList:
       break
        
 while row < 5:
-  f.write("alias "+str(row)+"-"+str(slot)+"\t/dev/disk/by-path/pci-0000:-sas-phy"+str(phyList[a])+"-lun-0\n")
+  f.write("alias "+str(row)+"-"+str(slot)+"\t/dev/disk/by-path/pci-0000:-sas-phy-lun-0\n")
   if slot == 15:
     slot = 1
     row += 1
