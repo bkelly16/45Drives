@@ -1,5 +1,7 @@
-import subprocess, time
+import subprocess, time, sys
 starttime = time.time()
+
+print "Creating /etc/zfs/vdev-id.conf file..."
 
 def logical():
   logicalList = []
@@ -61,9 +63,8 @@ phyList = practical()
 row = 1
 slot = 1
 numCards = countCards()
-cardName = '9305-24i'
-chassisSize = 60
 controllerNumber = 0
+rowBreak = (int(sys.argv[1])/15) + 1
 
 f = open("/etc/zfs/vdev_id.conf","w+")
 
@@ -72,16 +73,21 @@ f.write("# name\t\tfully qualified or base name of device link\n")
 for entry in cardList:
 
   if entry == '24i':
-    pciAddress = (subprocess.Popen("sas3flash -c %d -list | grep 'PCI Address'"%controllerNumber, shell=True, stdout=subprocess.PIPE).stdout).read().splitlines()[0].split()[3]
+    try:
+      pciAddress = (subprocess.Popen("sas3flash -c %d -list | grep 'PCI Address'"%controllerNumber, shell=True, stdout=subprocess.PIPE).stdout).read().splitlines()[0].split()[3]
+    except IndexError:
+      print "SAS3Flash cannot read your controllers, make sure they are all LSI-9305 (16i or 24i) cards."
     pciAddress = pciAddress[3]+pciAddress[4]
     controllerNumber += 1
-    while row != 5:
+    while row != rowBreak:
       for a in range(0,24):
         if numCards > 0:
           f.write("alias "+str(row)+"-"+str(slot)+"\t/dev/disk/by-path/pci-0000:"+pciAddress+":00.0-sas-phy"+str(phyList[a])+"-lun-0\n")   
           if slot == 15:
             slot = 1
             row += 1
+            if row == rowBreak:
+              break
           else:
             slot += 1    
       break
@@ -93,18 +99,20 @@ for entry in cardList:
     pciAddress = (subprocess.Popen("sas3flash -c %d -list | grep 'PCI Address'"%controllerNumber, shell=True, stdout=subprocess.PIPE).stdout).read().splitlines()[0].split()[3]
     pciAddress = pciAddress[3]+pciAddress[4]
     controllerNumber += 1
-    while row != 5:
+    while row != rowBreak:
       for b in range(0,16):
         if numCards > 0:
-          f.write("alias "+str(row)+"-"+str(slot)+"\t/dev/disk/by-path/pci-0000:"+pciAddress+":00.0-sas-phy"+str(phyList[a])+"-lun-0\n")
+          f.write("alias "+str(row)+"-"+str(slot)+"\t/dev/disk/by-path/pci-0000:"+pciAddress+":00.0-sas-phy"+str(phyList[b])+"-lun-0\n")
           if slot == 15:
             slot = 1
             row += 1
+            if row == rowBreak:
+              break
           else:
             slot += 1
       break
        
-while row < 5:
+while row < rowBreak:
   f.write("alias "+str(row)+"-"+str(slot)+"\t/dev/disk/by-path/pci-0000:-sas-phy"+str(phyList[a])+"-lun-0\n")
   if slot == 15:
     slot = 1
