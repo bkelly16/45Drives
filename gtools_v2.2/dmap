@@ -54,7 +54,6 @@ getsize(){
       ;;
     esac
   else
-    echo "nothing here buds"
     if [ -z $CHASSIS ]; then
     	read -p "Chassis Size? " CHASSIS
     fi
